@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Predict — CardioShield AI</title>
+  <meta name="description" content="Enter patient clinical data to get an instant heart disease risk prediction."/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/"><span class="heart-icon">♥</span> CardioShield <span class="ai-badge">AI</span></a>
+  <ul class="navbar-nav flex-row">
+    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+    <li class="nav-item"><a class="nav-link" href="/predict">Predict</a></li>
+    <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+  </ul>
+</nav>
+
+<!-- Spinner overlay -->
+<div class="spinner-overlay">
+  <div class="spinner-ring"></div>
+  <p style="color:#94a3b8;margin-top:1rem;">Analysing clinical data…</p>
+</div>
+
+<section class="predict-section">
+  <div class="form-header">
+    <h1>Patient Risk Assessment</h1>
+    <p>Complete all 13 clinical fields to generate your AI-powered heart disease prediction.</p>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="form-progress mb-4">
+    <div class="progress-steps">
+      <div class="progress-step" id="ps-1"></div>
+      <div class="progress-step" id="ps-2"></div>
+      <div class="progress-step" id="ps-3"></div>
+      <div class="progress-step" id="ps-4"></div>
+      <div class="progress-step" id="ps-5"></div>
+    </div>
+    <p class="small text-muted mt-1" id="progress-label">0 / 13 fields completed</p>
+  </div>
+
+  <div id="form-alert" class="alert alert-danger" style="display:none;"></div>
+
+  <form id="prediction-form" novalidate>
+    <div class="predict-card">
+
+      <!-- Row 0: Patient name -->
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <div class="form-group">
+            <label>Patient Name <span class="optional">(optional)</span></label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. John Doe"/>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:1.5rem 0;"/>
+      <p class="small text-muted mb-3"><strong style="color:var(--text-200)">Clinical Parameters</strong> — all fields below are required</p>
+
+      <div class="form-grid">
+
+        <!-- Age -->
+        <div class="form-group">
+          <label for="age">Age <span class="unit">yrs</span></label>
+          <input type="number" id="age" name="age" class="form-control" min="1" max="120" placeholder="e.g. 55" required/>
+        </div>
+
+        <!-- Sex -->
+        <div class="form-group">
+          <label for="sex">Sex</label>
+          <select id="sex" name="sex" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="1">Male</option>
+            <option value="0">Female</option>
+          </select>
+        </div>
+
+        <!-- Chest Pain -->
+        <div class="form-group">
+          <label for="cp">Chest Pain Type</label>
+          <select id="cp" name="cp" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="0">Typical Angina (0)</option>
+            <option value="1">Atypical Angina (1)</option>
+            <option value="2">Non-Anginal (2)</option>
+            <option value="3">Asymptomatic (3)</option>
+          </select>
+        </div>
+
+        <!-- Resting BP -->
+        <div class="form-group">
+          <label for="trestbps">Resting BP <span class="unit">mmHg</span></label>
+          <input type="number" id="trestbps" name="trestbps" class="form-control" min="50" max="250" placeholder="e.g. 130" required/>
+        </div>
+
+        <!-- Cholesterol -->
+        <div class="form-group">
+          <label for="chol">Cholesterol <span class="unit">mg/dl</span></label>
+          <input type="number" id="chol" name="chol" class="form-control" min="50" max="600" placeholder="e.g. 240" required/>
+        </div>
+
+        <!-- Fasting Blood Sugar -->
+        <div class="form-group">
+          <label for="fbs">Fasting BS &gt; 120</label>
+          <select id="fbs" name="fbs" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="1">Yes (1)</option>
+            <option value="0">No (0)</option>
+          </select>
+        </div>
+
+        <!-- Resting ECG -->
+        <div class="form-group">
+          <label for="restecg">Resting ECG</label>
+          <select id="restecg" name="restecg" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="0">Normal (0)</option>
+            <option value="1">ST-T Abnormality (1)</option>
+            <option value="2">LV Hypertrophy (2)</option>
+          </select>
+        </div>
+
+        <!-- Max Heart Rate -->
+        <div class="form-group">
+          <label for="thalach">Max Heart Rate <span class="unit">bpm</span></label>
+          <input type="number" id="thalach" name="thalach" class="form-control" min="50" max="250" placeholder="e.g. 150" required/>
+        </div>
+
+        <!-- Exercise Angina -->
+        <div class="form-group">
+          <label for="exang">Exercise Angina</label>
+          <select id="exang" name="exang" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="1">Yes (1)</option>
+            <option value="0">No (0)</option>
+          </select>
+        </div>
+
+        <!-- Oldpeak -->
+        <div class="form-group">
+          <label for="oldpeak">ST Depression (Oldpeak)</label>
+          <input type="number" id="oldpeak" name="oldpeak" class="form-control" min="0" max="10" step="0.1" placeholder="e.g. 1.4" required/>
+        </div>
+
+        <!-- Slope -->
+        <div class="form-group">
+          <label for="slope">ST Slope</label>
+          <select id="slope" name="slope" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="0">Upsloping (0)</option>
+            <option value="1">Flat (1)</option>
+            <option value="2">Downsloping (2)</option>
+          </select>
+        </div>
+
+        <!-- CA -->
+        <div class="form-group">
+          <label for="ca">Major Vessels (CA)</label>
+          <select id="ca" name="ca" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+
+        <!-- Thal -->
+        <div class="form-group">
+          <label for="thal">Thalassemia (Thal)</label>
+          <select id="thal" name="thal" class="form-select" required>
+            <option value="" disabled selected>Select</option>
+            <option value="1">Normal (1)</option>
+            <option value="2">Fixed Defect (2)</option>
+            <option value="3">Reversible Defect (3)</option>
+          </select>
+        </div>
+
+      </div><!-- /form-grid -->
+    </div><!-- /predict-card -->
+
+    <!-- Actions -->
+    <div class="form-actions mt-4">
+      <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+        ♥ &nbsp;Predict Now
+      </button>
+      <button type="reset" class="btn btn-outline" id="reset-btn">Reset Form</button>
+    </div>
+
+    <!-- Sample Data helper -->
+    <p class="text-center mt-3">
+      <button type="button" class="btn btn-sm btn-outline" id="sample-btn" onclick="fillSample()">
+        🔬 Fill Sample Data
+      </button>
+    </p>
+  </form>
+</section>
+
+<footer>
+  CardioShield AI &copy; 2024 &nbsp;|&nbsp; <a href="/health">API Health</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function fillSample() {
+  const sample = {age:63,sex:1,cp:3,trestbps:145,chol:233,fbs:1,restecg:0,thalach:150,exang:0,oldpeak:2.3,slope:0,ca:0,thal:1};
+  Object.entries(sample).forEach(([k,v]) => {
+    const el = document.querySelector(`[name="${k}"]`);
+    if (el) { el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); }
+  });
+}
+</script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

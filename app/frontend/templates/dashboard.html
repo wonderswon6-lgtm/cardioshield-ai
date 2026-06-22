@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard — CardioShield AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/"><span class="heart-icon">♥</span> CardioShield <span class="ai-badge">AI</span></a>
+  <ul class="navbar-nav flex-row">
+    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+    <li class="nav-item"><a class="nav-link" href="/predict">Predict</a></li>
+    <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+  </ul>
+</nav>
+
+<section class="dashboard-section">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="dashboard-title mb-0">Analytics Dashboard</h1>
+    <a href="/predict" class="btn btn-primary btn-sm" id="dash-new-pred-btn">+ New Prediction</a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap blue">📊</div>
+      <div>
+        <div class="kpi-val" id="kpi-total">—</div>
+        <div class="kpi-label">Total Predictions</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap pink">⚠️</div>
+      <div>
+        <div class="kpi-val" id="kpi-disease">—</div>
+        <div class="kpi-label">Disease Detected</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap green">✅</div>
+      <div>
+        <div class="kpi-val" id="kpi-no-disease">—</div>
+        <div class="kpi-label">No Disease</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap yellow">🔴</div>
+      <div>
+        <div class="kpi-val" id="kpi-high-risk">—</div>
+        <div class="kpi-label">High Risk Cases</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap pink">📈</div>
+      <div>
+        <div class="kpi-val" id="kpi-rate">—</div>
+        <div class="kpi-label">Disease Rate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Risk Distribution</h3>
+      <canvas id="riskDonut" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Model Performance Comparison</h3>
+      <canvas id="metricsBar" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- Report Images Row -->
+  <div class="charts-grid mb-4">
+    <div class="chart-card">
+      <h3>ROC Curves</h3>
+      <img src="{{ url_for('static', filename='images/roc_curves.png') }}"
+           class="img-fluid rounded" alt="ROC Curves"
+           onerror="this.parentElement.innerHTML+='<p class=\'text-muted small mt-2\'>Run training to generate this chart</p>';this.remove()"/>
+    </div>
+    <div class="chart-card">
+      <h3>Feature Importance</h3>
+      <img src="{{ url_for('static', filename='images/feature_importance.png') }}"
+           class="img-fluid rounded" alt="Feature Importance"
+           onerror="this.parentElement.innerHTML+='<p class=\'text-muted small mt-2\'>Run training to generate this chart</p>';this.remove()"/>
+    </div>
+  </div>
+
+  <!-- Recent Predictions Table -->
+  <div class="table-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="mb-0">Recent Predictions</h3>
+      <div>
+        <button class="btn btn-outline text-danger btn-sm me-2" onclick="bulkDeletePredictions()" id="bulk-delete-btn" style="display:none;">🗑️ Delete Selected</button>
+        <button class="btn btn-outline btn-sm" onclick="loadRecentPredictions()" id="refresh-btn">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;"><input type="checkbox" id="select-all-preds" onclick="toggleSelectAll(this)"></th>
+            <th>ID</th>
+            <th>Patient</th>
+            <th>Model</th>
+            <th>Prediction</th>
+            <th>Probability</th>
+            <th>Risk Level</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="predictions-tbody">
+          <tr><td colspan="9" class="text-center text-muted py-4">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Selected Predictions Comparison Section -->
+  <div class="table-card mt-4" id="comparison-card" style="display: none; animation: fadeInUp 0.4s ease both;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="gradient-text mb-0" style="font-weight: 800; font-size: 1.25rem;">Selected Predictions - Multi-Model Analysis</h3>
+      <span class="badge badge-low" id="comparison-count-badge">0 Selected</span>
+    </div>
+    
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient Details</th>
+            <th>Logistic Regression</th>
+            <th>Decision Tree</th>
+            <th>Random Forest</th>
+            <th>Neural Network</th>
+            <th>Consensus Verdict</th>
+          </tr>
+        </thead>
+        <tbody id="comparison-tbody">
+          <!-- Filled dynamically by JS -->
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Model Probability Chart Card (Dynamic) -->
+    <div class="row mt-4" id="comparison-chart-row" style="display: none;">
+      <div class="col-12">
+        <div class="p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+          <h4 class="small text-muted mb-3" style="font-weight:700; letter-spacing:0.05em; text-transform:uppercase;">Model Probability Comparison (Disease Likelihood)</h4>
+          <div style="height: 250px; position: relative;">
+            <canvas id="comparisonChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-100);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border);">
+          <h5 class="modal-title fw-bold" id="editModalLabel">Modify Prediction Record</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="edit-prediction-form">
+            <input type="hidden" id="edit-pred-id" name="id"/>
+            <div class="mb-3">
+              <label for="edit-patient-name" class="form-label small fw-bold" style="color: var(--text-200); letter-spacing: 0.05em;">PATIENT NAME</label>
+              <input type="text" class="form-control" id="edit-patient-name" required placeholder="Patient Name"/>
+            </div>
+            <div class="mb-3">
+              <label for="edit-risk-level" class="form-label small fw-bold" style="color: var(--text-200); letter-spacing: 0.05em;">CLINICAL RISK LEVEL</label>
+              <select class="form-select" id="edit-risk-level">
+                <option value="Low">Low Risk</option>
+                <option value="Moderate">Moderate Risk</option>
+                <option value="High">High Risk</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid var(--border);">
+          <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="submitEdit()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Report Modal -->
+  <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-100);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border);">
+          <h5 class="modal-title fw-bold" id="reportModalLabel">Patient Risk Assessment Report</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Top Header Info -->
+          <div class="d-flex justify-content-between mb-3 border-bottom pb-2" style="border-color: var(--border) !important; font-size:0.95rem; color: var(--text-100);">
+            <div>
+              Patient Name: <strong id="report-meta-name" class="text-white"></strong> &nbsp;|&nbsp; 
+              Age: <strong id="report-meta-age" class="text-white"></strong> &nbsp;|&nbsp; 
+              Sex: <strong id="report-meta-sex" class="text-white"></strong>
+            </div>
+            <div>
+              ID: <strong id="report-meta-id" class="text-white"></strong>
+            </div>
+          </div>
+          
+          <div class="mb-3 p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+            <h6 class="fw-bold mb-3" style="color: var(--text-200); letter-spacing: 0.05em;">PATIENT DETAILS</h6>
+            <div id="report-patient-details">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+          
+          <div class="p-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+            <h6 class="fw-bold mb-3" style="color: var(--text-200); letter-spacing: 0.05em;">MODEL PREDICTION COMPARISON</h6>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm m-0" style="font-size:0.85rem; --bs-table-bg: transparent;">
+                <thead style="border-bottom: 1px solid var(--border);">
+                  <tr>
+                    <th style="color:var(--text-200);">Model Name</th>
+                    <th style="color:var(--text-200);">Prediction</th>
+                    <th style="color:var(--text-200);">Probability</th>
+                    <th style="color:var(--text-200);">Risk Level</th>
+                    <th style="color:var(--text-200);">Clinical Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody id="report-comparison-tbody">
+                  <tr><td colspan="5" class="text-muted text-center py-2">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top: 1px solid var(--border);">
+          <button type="button" class="btn btn-primary btn-print" onclick="window.print()">🖨️ Print Report</button>
+          <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Training notice -->
+  <div class="alert alert-info mt-4" id="train-notice" style="display:none;">
+    ℹ️ Models not yet trained. <a href="#" onclick="triggerTraining()">Click to train now</a> (runs in background, takes ~60s).
+  </div>
+</section>
+
+<footer>
+  CardioShield AI &copy; 2024 &nbsp;|&nbsp; <a href="/health">API Health</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+async function triggerTraining() {
+  const r = await fetch('/api/train', { method: 'POST' });
+  alert('Training started! Refresh in ~60 seconds.');
+}
+</script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

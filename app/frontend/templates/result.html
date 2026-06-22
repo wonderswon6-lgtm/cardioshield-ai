@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Result — CardioShield AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/"><span class="heart-icon">♥</span> CardioShield <span class="ai-badge">AI</span></a>
+  <ul class="navbar-nav flex-row">
+    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+    <li class="nav-item"><a class="nav-link" href="/predict">Predict</a></li>
+    <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+  </ul>
+</nav>
+
+<section class="result-section" style="max-width: 950px;">
+  <div class="result-card fade-in" style="text-align: left; padding: 2.5rem;">
+    
+    <!-- Patient Info Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3" style="border-bottom: 1px solid var(--border);">
+      <div>
+        <h1 class="fw-bold mb-1" style="font-size: 1.6rem; color: #fff;">Patient Risk Assessment Report</h1>
+        <p class="text-muted small mb-0" id="patient-meta" style="font-size: 0.9rem;">Patient: Loading...</p>
+      </div>
+      <div>
+        <span class="badge badge-low" style="font-size: 0.8rem; padding: 6px 14px;" id="patient-id-badge">ID: —</span>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="table-card mb-4" style="background: transparent; border: none; padding: 0;">
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-100);">Model Prediction Comparison</h3>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="font-size: 0.75rem; letter-spacing: 0.05em;">Model Name</th>
+              <th style="font-size: 0.75rem; letter-spacing: 0.05em;">Prediction</th>
+              <th style="font-size: 0.75rem; letter-spacing: 0.05em;">Probability</th>
+              <th style="font-size: 0.75rem; letter-spacing: 0.05em;">Risk Level</th>
+              <th style="font-size: 0.75rem; letter-spacing: 0.05em;">Clinical Recommendation</th>
+            </tr>
+          </thead>
+          <tbody id="result-table-tbody">
+            <tr><td colspan="5" class="text-center text-muted py-4">Processing predictions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-3 justify-content-end flex-wrap mt-4 pt-3" style="border-top: 1px solid var(--border);">
+      <button class="btn btn-outline" onclick="window.print()" id="print-btn">🖨 Print Report</button>
+      <a href="/predict" class="btn btn-primary" id="new-pred-btn">New Prediction</a>
+      <a href="/dashboard" class="btn btn-outline" id="go-dashboard-btn">View Dashboard</a>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  CardioShield AI &copy; 2024 &nbsp;|&nbsp; <a href="/health">API Health</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
