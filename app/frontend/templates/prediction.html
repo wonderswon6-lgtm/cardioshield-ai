@@ -66,8 +66,11 @@
 
         <!-- Age -->
         <div class="form-group">
-          <label for="age">Age <span class="unit">yrs</span></label>
-          <input type="number" id="age" name="age" class="form-control" min="1" max="120" placeholder="e.g. 55" required/>
+          <label for="age" class="d-flex justify-content-between mb-1"><span>Age <span class="unit">yrs</span></span><span id="age-val" class="fw-bold text-primary"></span></label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range flex-grow-1" id="age-slider" min="1" max="120" value="55" oninput="document.getElementById('age').value = this.value; document.getElementById('age-val').innerText = this.value; document.getElementById('age').dispatchEvent(new Event('change'))">
+            <input type="number" id="age" name="age" class="form-control text-center p-1" min="1" max="120" placeholder="e.g. 55" style="width: 70px;" oninput="document.getElementById('age-slider').value = this.value; document.getElementById('age-val').innerText = this.value;" required/>
+          </div>
         </div>
 
         <!-- Sex -->
@@ -94,14 +97,20 @@
 
         <!-- Resting BP -->
         <div class="form-group">
-          <label for="trestbps">Resting BP <span class="unit">mmHg</span></label>
-          <input type="number" id="trestbps" name="trestbps" class="form-control" min="50" max="250" placeholder="e.g. 130" required/>
+          <label for="trestbps" class="d-flex justify-content-between mb-1"><span>Resting BP <span class="unit">mmHg</span></span><span id="trestbps-val" class="fw-bold text-primary"></span></label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range flex-grow-1" id="trestbps-slider" min="50" max="250" value="120" oninput="document.getElementById('trestbps').value = this.value; document.getElementById('trestbps-val').innerText = this.value; document.getElementById('trestbps').dispatchEvent(new Event('change'))">
+            <input type="number" id="trestbps" name="trestbps" class="form-control text-center p-1" min="50" max="250" placeholder="e.g. 130" style="width: 70px;" oninput="document.getElementById('trestbps-slider').value = this.value; document.getElementById('trestbps-val').innerText = this.value;" required/>
+          </div>
         </div>
 
         <!-- Cholesterol -->
         <div class="form-group">
-          <label for="chol">Cholesterol <span class="unit">mg/dl</span></label>
-          <input type="number" id="chol" name="chol" class="form-control" min="50" max="600" placeholder="e.g. 240" required/>
+          <label for="chol" class="d-flex justify-content-between mb-1"><span>Cholesterol <span class="unit">mg/dl</span></span><span id="chol-val" class="fw-bold text-primary"></span></label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range flex-grow-1" id="chol-slider" min="50" max="600" value="200" oninput="document.getElementById('chol').value = this.value; document.getElementById('chol-val').innerText = this.value; document.getElementById('chol').dispatchEvent(new Event('change'))">
+            <input type="number" id="chol" name="chol" class="form-control text-center p-1" min="50" max="600" placeholder="e.g. 240" style="width: 70px;" oninput="document.getElementById('chol-slider').value = this.value; document.getElementById('chol-val').innerText = this.value;" required/>
+          </div>
         </div>
 
         <!-- Fasting Blood Sugar -->
@@ -127,8 +136,11 @@
 
         <!-- Max Heart Rate -->
         <div class="form-group">
-          <label for="thalach">Max Heart Rate <span class="unit">bpm</span></label>
-          <input type="number" id="thalach" name="thalach" class="form-control" min="50" max="250" placeholder="e.g. 150" required/>
+          <label for="thalach" class="d-flex justify-content-between mb-1"><span>Max Heart Rate <span class="unit">bpm</span></span><span id="thalach-val" class="fw-bold text-primary"></span></label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range flex-grow-1" id="thalach-slider" min="50" max="250" value="150" oninput="document.getElementById('thalach').value = this.value; document.getElementById('thalach-val').innerText = this.value; document.getElementById('thalach').dispatchEvent(new Event('change'))">
+            <input type="number" id="thalach" name="thalach" class="form-control text-center p-1" min="50" max="250" placeholder="e.g. 150" style="width: 70px;" oninput="document.getElementById('thalach-slider').value = this.value; document.getElementById('thalach-val').innerText = this.value;" required/>
+          </div>
         </div>
 
         <!-- Exercise Angina -->
@@ -143,8 +155,11 @@
 
         <!-- Oldpeak -->
         <div class="form-group">
-          <label for="oldpeak">ST Depression (Oldpeak)</label>
-          <input type="number" id="oldpeak" name="oldpeak" class="form-control" min="0" max="10" step="0.1" placeholder="e.g. 1.4" required/>
+          <label for="oldpeak" class="d-flex justify-content-between mb-1"><span>ST Depression <span class="unit">(Oldpeak)</span></span><span id="oldpeak-val" class="fw-bold text-primary"></span></label>
+          <div class="d-flex align-items-center gap-2">
+            <input type="range" class="form-range flex-grow-1" id="oldpeak-slider" min="0" max="10" step="0.1" value="0" oninput="document.getElementById('oldpeak').value = this.value; document.getElementById('oldpeak-val').innerText = this.value; document.getElementById('oldpeak').dispatchEvent(new Event('change'))">
+            <input type="number" id="oldpeak" name="oldpeak" class="form-control text-center p-1" min="0" max="10" step="0.1" placeholder="e.g. 1.4" style="width: 70px;" oninput="document.getElementById('oldpeak-slider').value = this.value; document.getElementById('oldpeak-val').innerText = this.value;" required/>
+          </div>
         </div>
 
         <!-- Slope -->

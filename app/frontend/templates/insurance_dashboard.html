@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Insurance Risk Assessment — CardioShield AI</title>
+  <meta name="description" content="Health Insurance Risk Assessment Dashboard for evaluating applicant cardiac risk based on AI predictions."/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    /* ── Insurance Dashboard — Light Professional Theme ─────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --ins-blue:       #1d4ed8;
+      --ins-blue-lt:    #3b82f6;
+      --ins-blue-pale:  #eff6ff;
+      --ins-green:      #16a34a;
+      --ins-green-pale: #f0fdf4;
+      --ins-yellow:     #ca8a04;
+      --ins-yellow-pale:#fefce8;
+      --ins-red:        #dc2626;
+      --ins-red-pale:   #fef2f2;
+      --ins-gray:       #64748b;
+      --ins-gray-lt:    #f8fafc;
+      --ins-border:     #e2e8f0;
+      --ins-text:       #1e293b;
+      --ins-text-muted: #64748b;
+      --font: 'Inter', sans-serif;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: var(--font);
+      background: #f1f5f9;
+      color: var(--ins-text);
+      min-height: 100vh;
+    }
+
+    /* ── Top Navbar ─────────────────────────────────────────────────── */
+    .ins-navbar {
+      background: #fff;
+      border-bottom: 1px solid var(--ins-border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .ins-navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--ins-text);
+      text-decoration: none;
+    }
+    .ins-navbar-brand .shield-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--ins-blue), var(--ins-blue-lt));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .ins-navbar-brand .ins-badge {
+      background: var(--ins-blue-pale);
+      color: var(--ins-blue);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .ins-navbar-links { display: flex; gap: 1.5rem; align-items: center; }
+    .ins-navbar-links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--ins-gray);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .ins-navbar-links a:hover, .ins-navbar-links a.active { color: var(--ins-blue); }
+    .ins-navbar-links a.active { font-weight: 600; }
+
+    /* ── Page Header ─────────────────────────────────────────────────── */
+    .ins-page-header {
+      background: #fff;
+      border-bottom: 1px solid var(--ins-border);
+      padding: 1.5rem 2rem;
+    }
+    .ins-page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ins-text);
+      margin-bottom: 0.25rem;
+    }
+    .ins-page-header p {
+      color: var(--ins-text-muted);
+      font-size: 0.875rem;
+      margin: 0;
+    }
+    .ins-breadcrumb {
+      font-size: 0.8rem;
+      color: var(--ins-text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .ins-breadcrumb a { color: var(--ins-blue); text-decoration: none; }
+    .ins-breadcrumb span { margin: 0 0.4rem; }
+
+    /* ── Main Layout ─────────────────────────────────────────────────── */
+    .ins-main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+    /* ── KPI Cards ───────────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    .kpi-card {
+      background: #fff;
+      border: 1px solid var(--ins-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+    .kpi-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .kpi-icon.blue   { background: var(--ins-blue-pale);   color: var(--ins-blue);   }
+    .kpi-icon.green  { background: var(--ins-green-pale);  color: var(--ins-green);  }
+    .kpi-icon.yellow { background: var(--ins-yellow-pale); color: var(--ins-yellow); }
+    .kpi-icon.red    { background: var(--ins-red-pale);    color: var(--ins-red);    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--ins-text);
+    }
+    .kpi-label {
+      font-size: 0.8rem;
+      color: var(--ins-text-muted);
+      font-weight: 500;
+      margin-top: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Section Heading ──────────────────────────────────────────────── */
+    .section-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ins-gray);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────────── */
+    .ins-card {
+      background: #fff;
+      border: 1px solid var(--ins-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .ins-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--ins-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ins-card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ins-text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ins-card-body { padding: 1.25rem; }
+
+    /* ── Applicant Summary Card ──────────────────────────────────────── */
+    .applicant-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .applicant-stat {
+      background: var(--ins-gray-lt);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .applicant-stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ins-gray);
+      margin-bottom: 0.2rem;
+    }
+    .applicant-stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--ins-text);
+    }
+
+    /* ── Risk Gauge ───────────────────────────────────────────────────── */
+    .gauge-container {
+      position: relative;
+      width: 220px;
+      height: 130px;
+      margin: 0 auto;
+    }
+    .gauge-label {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+    .gauge-score { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .gauge-sub { font-size: 0.75rem; color: var(--ins-gray); font-weight: 500; }
+
+    /* ── Risk Category Badge ─────────────────────────────────────────── */
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .risk-badge.low    { background: var(--ins-green-pale);  color: var(--ins-green);  }
+    .risk-badge.medium { background: var(--ins-yellow-pale); color: var(--ins-yellow); }
+    .risk-badge.high   { background: var(--ins-red-pale);    color: var(--ins-red);    }
+
+    /* ── Risk Classification Strip ────────────────────────────────────── */
+    .risk-strip {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 36px;
+      margin: 0.75rem 0;
+    }
+    .risk-strip-segment {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: opacity 0.2s;
+    }
+    .risk-strip-segment.low    { flex: 35; background: #dcfce7; color: #16a34a; }
+    .risk-strip-segment.medium { flex: 35; background: #fef9c3; color: #ca8a04; }
+    .risk-strip-segment.high   { flex: 30; background: #fee2e2; color: #dc2626; }
+    .risk-strip-segment.active-low    { background: #22c55e; color: #fff; }
+    .risk-strip-segment.active-medium { background: #eab308; color: #fff; }
+    .risk-strip-segment.active-high   { background: #ef4444; color: #fff; }
+
+    /* ── Risk Factor Table ────────────────────────────────────────────── */
+    .factor-table { width: 100%; border-collapse: collapse; }
+    .factor-table th {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ins-gray);
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid var(--ins-border);
+      text-align: left;
+    }
+    .factor-table td {
+      padding: 0.6rem 0.75rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--ins-border);
+      color: var(--ins-text);
+      vertical-align: middle;
+    }
+    .factor-table tr:last-child td { border-bottom: none; }
+    .factor-table tr:hover td { background: var(--ins-gray-lt); }
+    .impact-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .impact-bar {
+      height: 6px;
+      border-radius: 3px;
+      flex-grow: 1;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .impact-bar-fill { height: 100%; border-radius: 3px; }
+    .impact-bar-fill.high   { background: #ef4444; }
+    .impact-bar-fill.medium { background: #eab308; }
+    .impact-bar-fill.low    { background: #22c55e; }
+    .impact-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+    .impact-tag.high   { background: #fee2e2; color: #dc2626; }
+    .impact-tag.medium { background: #fef9c3; color: #ca8a04; }
+    .impact-tag.low    { background: #dcfce7; color: #16a34a; }
+    .impact-tag.protective { background: #eff6ff; color: #1d4ed8; }
+
+    /* ── Recommendation Card ─────────────────────────────────────────── */
+    .rec-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--ins-border);
+    }
+    .rec-row:last-child { border-bottom: none; }
+    .rec-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .rec-row .rec-label { font-size: 0.72rem; color: var(--ins-gray); font-weight: 600; text-transform: uppercase; }
+    .rec-row .rec-value { font-size: 0.9rem; font-weight: 700; color: var(--ins-text); margin-top: 2px; }
+
+    /* ── Applicants Table ────────────────────────────────────────────── */
+    .applicants-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .applicants-table th {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ins-gray);
+      padding: 0.6rem 1rem;
+      border-bottom: 2px solid var(--ins-border);
+      background: var(--ins-gray-lt);
+      text-align: left;
+    }
+    .applicants-table td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--ins-border);
+      color: var(--ins-text);
+      vertical-align: middle;
+    }
+    .applicants-table tr:hover td { background: var(--ins-gray-lt); cursor: pointer; }
+    .applicants-table tr.selected td { background: var(--ins-blue-pale); }
+
+    /* ── Progress bar (risk score in table) ─────────────────────────── */
+    .score-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .score-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; width: 70px; }
+    .score-bar-fill { height: 100%; border-radius: 4px; }
+
+    /* ── Pagination / Search ─────────────────────────────────────────── */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--ins-border);
+    }
+    .ins-search {
+      border: 1px solid var(--ins-border);
+      border-radius: 8px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.85rem;
+      outline: none;
+      width: 240px;
+      background: var(--ins-gray-lt);
+      color: var(--ins-text);
+      transition: border-color 0.2s;
+    }
+    .ins-search:focus { border-color: var(--ins-blue-lt); background: #fff; }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .ins-main { padding: 1rem; }
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    .ins-footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--ins-gray);
+      border-top: 1px solid var(--ins-border);
+      margin-top: 2rem;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────────────── -->
+<nav class="ins-navbar">
+  <a href="/" class="ins-navbar-brand">
+    <div class="shield-icon">🛡️</div>
+    <div>
+      CardioShield <span class="ins-badge">Insurance</span>
+    </div>
+  </a>
+  <div class="ins-navbar-links">
+    <a href="/">Home</a>
+    <a href="/insurance-dashboard" class="active">Insurance Risk</a>
+  </div>
+</nav>
+
+<!-- ── Page Header ─────────────────────────────────────────────────────── -->
+<div class="ins-page-header">
+  <div class="ins-breadcrumb">
+    <a href="/">CardioShield AI</a>
+    <span>/</span>
+    <span>Insurance Risk Assessment</span>
+  </div>
+  <div class="d-flex justify-content-between align-items-end">
+    <div>
+      <h1>Insurance Risk Assessment Dashboard</h1>
+      <p>AI-powered cardiac risk evaluation for health insurance underwriting decisions.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">🖨️ Export Report</button>
+      <a href="/predict" class="btn btn-sm" style="background: var(--ins-blue); color:#fff; border-radius:8px; font-weight:600;">+ New Assessment</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Content ───────────────────────────────────────────────────── -->
+<div class="ins-main">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">📋</div>
+      <div>
+        <div class="kpi-value" id="kpi-total">{{ kpis.total }}</div>
+        <div class="kpi-label">Total Assessments</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">✅</div>
+      <div>
+        <div class="kpi-value" style="color: var(--ins-green)" id="kpi-low">{{ kpis.low_risk }}</div>
+        <div class="kpi-label">Low Risk Applicants</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon yellow">⚠️</div>
+      <div>
+        <div class="kpi-value" style="color: var(--ins-yellow)" id="kpi-med">{{ kpis.medium_risk }}</div>
+        <div class="kpi-label">Medium Risk Applicants</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">🚨</div>
+      <div>
+        <div class="kpi-value" style="color: var(--ins-red)" id="kpi-high">{{ kpis.high_risk }}</div>
+        <div class="kpi-label">High Risk Applicants</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Row: Applicant Detail Panels -->
+  <div class="row g-4 mb-4">
+
+    <!-- Applicant Summary + Risk Gauge -->
+    <div class="col-lg-4">
+      <div class="section-heading">Applicant Risk Profile</div>
+      <div class="ins-card h-100">
+        <div class="ins-card-header">
+          <span class="ins-card-title">📄 Applicant Summary</span>
+          <span class="risk-badge" id="applicant-risk-badge">—</span>
+        </div>
+        <div class="ins-card-body">
+          <!-- Gauge -->
+          <div class="gauge-container mb-3">
+            <canvas id="riskGauge" width="220" height="130"></canvas>
+            <div class="gauge-label">
+              <div class="gauge-score" id="gauge-score-label" style="color: var(--ins-blue)">—</div>
+              <div class="gauge-sub">Risk Score</div>
+            </div>
+          </div>
+
+          <!-- Stats grid -->
+          <div class="applicant-summary">
+            <div class="applicant-stat">
+              <div class="applicant-stat-label">Applicant ID</div>
+              <div class="applicant-stat-value" id="detail-id" style="font-size: 1rem;">—</div>
+            </div>
+            <div class="applicant-stat">
+              <div class="applicant-stat-label">Prediction</div>
+              <div class="applicant-stat-value" id="detail-pred" style="font-size: 1rem;">—</div>
+            </div>
+            <div class="applicant-stat">
+              <div class="applicant-stat-label">Risk Score</div>
+              <div class="applicant-stat-value" id="detail-risk">—</div>
+            </div>
+            <div class="applicant-stat">
+              <div class="applicant-stat-label">Claim Probability</div>
+              <div class="applicant-stat-value" id="detail-claim">—</div>
+            </div>
+          </div>
+
+          <!-- Risk Classification Strip -->
+          <div class="mt-3">
+            <div class="applicant-stat-label mb-1">Risk Classification</div>
+            <div class="risk-strip" id="risk-strip">
+              <div class="risk-strip-segment low">0–35% LOW</div>
+              <div class="risk-strip-segment medium">36–70% MEDIUM</div>
+              <div class="risk-strip-segment high">71–100% HIGH</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Factor Analysis -->
+    <div class="col-lg-4">
+      <div class="section-heading">Risk Factor Analysis</div>
+      <div class="ins-card h-100">
+        <div class="ins-card-header">
+          <span class="ins-card-title">🔬 Clinical Risk Factors</span>
+          <span class="badge" style="background: var(--ins-blue-pale); color: var(--ins-blue); font-size: 0.7rem;">ML-Derived</span>
+        </div>
+        <div class="ins-card-body p-0">
+          <table class="factor-table">
+            <thead>
+              <tr>
+                <th>Factor</th>
+                <th>Patient Value</th>
+                <th>Impact</th>
+              </tr>
+            </thead>
+            <tbody id="risk-factor-tbody">
+              <tr><td colspan="3" class="text-center py-4" style="color: #94a3b8;">Select an applicant to view factors</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insurance Recommendation -->
+    <div class="col-lg-4">
+      <div class="section-heading">Insurance Recommendation</div>
+      <div class="ins-card" style="margin-bottom: 1.25rem;">
+        <div class="ins-card-header">
+          <span class="ins-card-title">📊 Risk Distribution</span>
+        </div>
+        <div class="ins-card-body" style="height: 180px; position: relative;">
+          <canvas id="distChart"></canvas>
+        </div>
+      </div>
+      <div class="ins-card">
+        <div class="ins-card-header">
+          <span class="ins-card-title">📋 Underwriting Decision</span>
+        </div>
+        <div class="ins-card-body">
+          <div class="rec-row">
+            <div class="rec-icon" style="background: var(--ins-blue-pale); color: var(--ins-blue);">📁</div>
+            <div>
+              <div class="rec-label">Risk Category</div>
+              <div class="rec-value" id="rec-category">—</div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-icon" style="background: var(--ins-green-pale); color: var(--ins-green);">💰</div>
+            <div>
+              <div class="rec-label">Premium Recommendation</div>
+              <div class="rec-value" id="rec-premium">—</div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-icon" style="background: var(--ins-yellow-pale); color: var(--ins-yellow);">🩺</div>
+            <div>
+              <div class="rec-label">Suggested Action</div>
+              <div class="rec-value" id="rec-action">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applicants Table -->
+  <div class="section-heading">All Applicants</div>
+  <div class="ins-card">
+    <div class="table-toolbar">
+      <span class="ins-card-title">🗂️ Applicant Registry</span>
+      <input type="text" class="ins-search" id="applicant-search" placeholder="🔍 Search by name or ID..." oninput="filterApplicants()">
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="applicants-table" id="applicants-table">
+        <thead>
+          <tr>
+            <th>Applicant ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Sex</th>
+            <th>Prediction</th>
+            <th>Risk Score</th>
+            <th>Claim Prob.</th>
+            <th>Category</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="applicants-tbody">
+          {% if applicants %}
+            {% for a in applicants %}
+            <tr class="applicant-row" data-pid="{{ a.patient_id }}"
+                data-id="{{ a.applicant_id }}"
+                data-name="{{ a.name }}"
+                data-risk="{{ a.risk_score }}"
+                data-claim="{{ a.claim_prob }}"
+                data-cat="{{ a.risk_category }}"
+                data-pred="{{ a.prediction }}"
+                data-premium="{{ a.premium }}"
+                data-action="{{ a.action }}"
+                onclick="selectApplicant(this)">
+              <td><strong style="color: var(--ins-blue);">{{ a.applicant_id }}</strong></td>
+              <td>{{ a.name }}</td>
+              <td>{{ a.age }}</td>
+              <td>{{ a.sex }}</td>
+              <td>
+                {% if a.prediction == 1 %}
+                  <span class="risk-badge high" style="font-size:0.72rem;">Heart Disease</span>
+                {% else %}
+                  <span class="risk-badge low" style="font-size:0.72rem;">No Disease</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar">
+                    <div class="score-bar-fill
+                      {% if a.risk_score < 35 %}impact-bar-fill low{% elif a.risk_score < 70 %}impact-bar-fill medium{% else %}impact-bar-fill high{% endif %}"
+                      style="width: {{ a.risk_score }}%"></div>
+                  </div>
+                  <span style="font-weight: 600; font-size: 0.82rem;">{{ a.risk_score }}%</span>
+                </div>
+              </td>
+              <td style="font-weight: 600;">{{ a.claim_prob }}%</td>
+              <td>
+                <span class="risk-badge {{ a.risk_category | lower }}" style="font-size: 0.72rem;">{{ a.risk_category }}</span>
+              </td>
+              <td>
+                <button class="btn btn-sm" style="background: var(--ins-blue-pale); color: var(--ins-blue); border-radius:6px; font-size:0.75rem; font-weight:600; padding: 3px 10px;" onclick="event.stopPropagation(); selectApplicant(this.closest('tr'))">View</button>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="9" class="text-center py-5" style="color: #94a3b8;">No assessments found. <a href="/predict">Run a prediction first.</a></td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /ins-main -->
+
+<footer class="ins-footer">
+  CardioShield AI — Insurance Risk Module &copy; 2024 &nbsp;|&nbsp;
+  Powered by Machine Learning (4-Model Ensemble) &nbsp;|&nbsp;
+  <a href="/dashboard" style="color: var(--ins-blue);">Clinical Dashboard</a>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Data from Flask ──────────────────────────────────────────────────────────
+const DIST_DATA = {
+  labels: {{ dist.labels | tojson }},
+  data:   {{ dist.data   | tojson }},
+  colors: {{ dist.colors | tojson }},
+};
+
+// ── Risk Distribution Doughnut Chart ─────────────────────────────────────────
+const distCtx = document.getElementById('distChart').getContext('2d');
+new Chart(distCtx, {
+  type: 'doughnut',
+  data: {
+    labels: DIST_DATA.labels,
+    datasets: [{
+      data: DIST_DATA.data,
+      backgroundColor: DIST_DATA.colors,
+      borderWidth: 2,
+      borderColor: '#fff',
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          font: { family: 'Inter', size: 11 },
+          padding: 12,
+          color: '#64748b',
+          boxWidth: 10,
+          boxHeight: 10,
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} applicants`
+        }
+      }
+    }
+  }
+});
+
+// ── Risk Gauge Chart ─────────────────────────────────────────────────────────
+let gaugeChart = null;
+
+function renderGauge(score) {
+  const ctx = document.getElementById('riskGauge').getContext('2d');
+  if (gaugeChart) gaugeChart.destroy();
+
+  let gaugeColor = '#22c55e';
+  if (score >= 70) gaugeColor = '#ef4444';
+  else if (score >= 35) gaugeColor = '#eab308';
+
+  const remaining = 100 - score;
+
+  gaugeChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [score, remaining],
+        backgroundColor: [gaugeColor, '#f1f5f9'],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270,
+      }]
+    },
+    options: {
+      responsive: false,
+      maintainAspectRatio: false,
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+
+  document.getElementById('gauge-score-label').textContent = score + '%';
+  document.getElementById('gauge-score-label').style.color = gaugeColor;
+}
+
+// ── Applicant Selection ───────────────────────────────────────────────────────
+function selectApplicant(row) {
+  // Deselect all
+  document.querySelectorAll('.applicant-row').forEach(r => r.classList.remove('selected'));
+  row.classList.add('selected');
+
+  const pid     = row.dataset.pid;
+  const id      = row.dataset.id;
+  const name    = row.dataset.name;
+  const risk    = parseFloat(row.dataset.risk);
+  const claim   = row.dataset.claim;
+  const cat     = row.dataset.cat;
+  const pred    = parseInt(row.dataset.pred);
+  const premium = row.dataset.premium;
+  const action  = row.dataset.action;
+
+  // Update summary
+  document.getElementById('detail-id').textContent   = id;
+  document.getElementById('detail-pred').textContent  = pred === 1 ? 'Heart Disease' : 'No Disease';
+  document.getElementById('detail-risk').textContent  = risk + '%';
+  document.getElementById('detail-claim').textContent = claim + '%';
+
+  // Risk badge
+  const badgeEl = document.getElementById('applicant-risk-badge');
+  badgeEl.textContent = cat + ' Risk';
+  badgeEl.className = 'risk-badge ' + cat.toLowerCase();
+
+  // Gauge
+  renderGauge(risk);
+
+  // Classification strip
+  const strip = document.getElementById('risk-strip');
+  strip.innerHTML = `
+    <div class="risk-strip-segment low ${cat === 'Low' ? 'active-low' : ''}">0–35% LOW</div>
+    <div class="risk-strip-segment medium ${cat === 'Medium' ? 'active-medium' : ''}">36–70% MEDIUM</div>
+    <div class="risk-strip-segment high ${cat === 'High' ? 'active-high' : ''}">71–100% HIGH</div>
+  `;
+
+  // Recommendation
+  document.getElementById('rec-category').textContent = cat + ' Risk';
+  document.getElementById('rec-premium').textContent  = premium;
+  document.getElementById('rec-action').textContent   = action;
+
+  // Load risk factors from API
+  loadRiskFactors(pid);
+}
+
+async function loadRiskFactors(patientId) {
+  const tbody = document.getElementById('risk-factor-tbody');
+  tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4" style="color:#94a3b8;">Loading risk factors…</td></tr>';
+
+  try {
+    const res  = await fetch(`/api/insurance/patient/${patientId}/risk-factors`);
+    const json = await res.json();
+
+    if (json.status === 'ok' && json.factors && json.factors.length > 0) {
+      tbody.innerHTML = json.factors.map(f => {
+        const contribution = f.contribution;
+        const absContrib   = Math.abs(contribution);
+        const maxContrib   = 30; // cap at 30 pp for bar width
+        const barWidth     = Math.min((absContrib / maxContrib) * 100, 100).toFixed(0);
+
+        let impactClass, impactLabel;
+        if (contribution > 5)       { impactClass = 'high';       impactLabel = 'High Risk'; }
+        else if (contribution > 1)  { impactClass = 'medium';     impactLabel = 'Medium';    }
+        else if (contribution > 0)  { impactClass = 'low';        impactLabel = 'Low';       }
+        else                        { impactClass = 'protective'; impactLabel = 'Protective'; }
+
+        return `<tr>
+          <td style="font-weight: 600;">${f.label}</td>
+          <td style="color: #64748b; font-size: 0.8rem;">${f.value}</td>
+          <td>
+            <div class="impact-bar-wrap">
+              <div class="impact-bar">
+                <div class="impact-bar-fill ${impactClass}" style="width:${barWidth}%"></div>
+              </div>
+              <span class="impact-tag ${impactClass}">${impactLabel}</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4" style="color:#94a3b8;">No risk factor data available.</td></tr>';
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4" style="color:#dc2626;">Error loading factors.</td></tr>';
+  }
+}
+
+// ── Table Search / Filter ─────────────────────────────────────────────────────
+function filterApplicants() {
+  const query = document.getElementById('applicant-search').value.toLowerCase();
+  document.querySelectorAll('.applicant-row').forEach(row => {
+    const name = (row.dataset.name || '').toLowerCase();
+    const id   = (row.dataset.id   || '').toLowerCase();
+    row.style.display = (name.includes(query) || id.includes(query)) ? '' : 'none';
+  });
+}
+
+// ── Auto-select first applicant on load ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const firstRow = document.querySelector('.applicant-row');
+  if (firstRow) {
+    selectApplicant(firstRow);
+    firstRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+});
+</script>
+</body>
+</html>

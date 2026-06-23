@@ -51,6 +51,38 @@
             <tr><td colspan="5" class="text-center text-muted py-4">Processing predictions...</td></tr>
           </tbody>
         </table>
+    </div>
+
+    <!-- Personalized Risk Analysis -->
+    <div class="explanation-section" id="explanation-section" style="display: none;">
+      <div class="explanation-selector-wrap">
+        <h3 class="gradient-text mb-0" style="font-size: 1.15rem; font-weight: 800;">Personalized Risk Analysis</h3>
+        <div class="d-flex align-items-center gap-2">
+          <label for="explain-model-select" class="small text-muted mb-0" style="font-weight: 600;">EXPLAIN USING:</label>
+          <select class="form-select form-select-sm" id="explain-model-select" style="width: auto; padding: 4px 30px 4px 10px !important;">
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+      </div>
+      
+      <p class="text-muted small mb-3">This analysis uses local feature contributions to show how each factor drives or protects against cardiovascular disease relative to the average population baseline.</p>
+
+      <div class="explanation-grid">
+        <!-- Risk Factors Column -->
+        <div class="explanation-card risk-card">
+          <h4 class="text-risk">🔺 Risk-Increasing Factors</h4>
+          <div class="explanation-list" id="risk-factors-list">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+        
+        <!-- Protective Factors Column -->
+        <div class="explanation-card protective-card">
+          <h4 class="text-protective">🟢 Protective Factors</h4>
+          <div class="explanation-list" id="protective-factors-list">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
       </div>
     </div>
 

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>New Patient Intake — CardioShield CDSS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:#1d4ed8; --blue-lt:#3b82f6; --blue-pale:#eff6ff;
+      --green:#16a34a; --green-pale:#f0fdf4;
+      --yellow:#ca8a04; --yellow-pale:#fefce8;
+      --red:#dc2626; --red-pale:#fef2f2;
+      --gray:#64748b; --gray-lt:#f8fafc; --border:#e2e8f0; --text:#1e293b;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: var(--text); min-height: 100vh; }
+
+    /* Layout */
+    .cdss-layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 220px; background: #0f172a; color: #cbd5e1;
+      display: flex; flex-direction: column; flex-shrink: 0;
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+    }
+    .sidebar-brand { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 0.6rem; }
+    .sidebar-brand .icon { font-size: 1.4rem; }
+    .sidebar-brand .name { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
+    .sidebar-brand .sub  { font-size: 0.68rem; color: #94a3b8; }
+    .sidebar-doctor { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-doctor .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 0.3rem; }
+    .sidebar-doctor .dname { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; }
+    .sidebar-doctor .spec  { font-size: 0.72rem; color: #3b82f6; }
+    .sidebar-nav { flex: 1; padding: 1rem 0; }
+    .nav-item-link { display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1.25rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; }
+    .nav-item-link:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
+    .nav-item-link.active { background: rgba(29,78,216,0.2); color: #60a5fa; border-right: 3px solid #3b82f6; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(239,68,68,0.1); color: #f87171; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 600; transition: background 0.2s; }
+    .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+    .main-content { margin-left: 220px; flex: 1; }
+
+    /* Top bar */
+    .topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .topbar h1 { font-size: 1.15rem; font-weight: 700; color: var(--text); margin: 0; }
+    .topbar .breadcrumb-nav { font-size: 0.78rem; color: var(--gray); margin-bottom: 0.2rem; }
+    .topbar .breadcrumb-nav a { color: var(--blue); text-decoration: none; }
+
+    /* Content */
+    .content-area { padding: 2rem; max-width: 900px; }
+
+    /* Form card */
+    .intake-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .intake-card-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--gray-lt);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .intake-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+    .intake-card-body { padding: 1.25rem; }
+
+    /* Section header within form */
+    .form-section { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin: 1rem 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--blue-pale); }
+    .form-section:first-of-type { margin-top: 0; }
+
+    /* Grid */
+    .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    @media (max-width: 700px) {
+      .form-grid-3 { grid-template-columns: 1fr 1fr; }
+      .form-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* Labels & inputs */
+    .form-label-sm {
+      font-size: 0.75rem; font-weight: 600; color: var(--gray);
+      display: flex; justify-content: space-between; margin-bottom: 0.3rem;
+    }
+    .form-label-sm .unit { font-weight: 400; color: #94a3b8; font-size: 0.7rem; }
+    .form-ctrl {
+      border: 1.5px solid var(--border); border-radius: 7px;
+      padding: 0.45rem 0.7rem; font-size: 0.85rem; width: 100%;
+      background: var(--gray-lt); color: var(--text); outline: none;
+      transition: border-color 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .form-ctrl:focus { border-color: var(--blue); background: #fff; }
+
+    /* Slider */
+    .slider-wrap { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.2rem; }
+    .form-range { flex: 1; accent-color: var(--blue); height: 4px; }
+    .slider-num {
+      font-size: 0.82rem; font-weight: 700; color: var(--blue);
+      background: var(--blue-pale); border-radius: 5px;
+      padding: 2px 8px; min-width: 48px; text-align: center;
+    }
+
+    /* Range hint */
+    .range-hint { font-size: 0.67rem; color: #94a3b8; margin-top: 0.2rem; }
+
+    /* Normal badge */
+    .normal-tag {
+      font-size: 0.62rem; font-weight: 700; background: var(--green-pale);
+      color: var(--green); padding: 1px 6px; border-radius: 10px;
+    }
+    .alert-tag {
+      font-size: 0.62rem; font-weight: 700; background: var(--yellow-pale);
+      color: var(--yellow); padding: 1px 6px; border-radius: 10px;
+    }
+
+    /* Submit button */
+    .submit-btn {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: #fff; border: none; border-radius: 9px;
+      padding: 0.8rem 2.5rem; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .submit-btn:hover { opacity: 0.9; }
+    .cancel-btn {
+      background: #fff; color: var(--gray);
+      border: 1.5px solid var(--border); border-radius: 9px;
+      padding: 0.8rem 1.5rem; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: flex; align-items: center;
+    }
+    .cancel-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* Alert flash */
+    .flash-msg { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
+    .flash-error { background: var(--red-pale); color: var(--red); border: 1px solid #fca5a5; }
+  </style>
+</head>
+<body>
+<div class="cdss-layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <span class="icon">🫀</span>
+      <div><div class="name">CardioShield</div><div class="sub">CDSS</div></div>
+    </div>
+    <div class="sidebar-doctor">
+      <div class="label">Attending Physician</div>
+      <div class="dname">{{ session.doctor_name }}</div>
+      <div class="spec">{{ session.doctor_spec }}</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/cdss/patients" class="nav-item-link">🔍 &nbsp;Patient Search</a>
+      <a href="/cdss/new_patient" class="nav-item-link active">➕ &nbsp;New Patient</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/cdss/logout" class="logout-btn">🚪 &nbsp;Logout</a>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="breadcrumb-nav"><a href="/cdss/patients">CDSS</a> › New Patient Intake</div>
+        <h1>📋 New Patient Clinical Intake</h1>
+      </div>
+      <span id="clock" style="font-size:0.78rem; color: var(--gray);"></span>
+    </div>
+
+    <div class="content-area">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="flash-msg flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form action="/cdss/new_patient" method="POST" id="intake-form">
+
+        <!-- Patient Identity -->
+        <div class="intake-card">
+          <div class="intake-card-header">
+            <span>🪪</span>
+            <span class="intake-card-title">Patient Identity</span>
+          </div>
+          <div class="intake-card-body">
+            <div class="form-grid-2">
+              <div>
+                <label class="form-label-sm">Full Name</label>
+                <input type="text" name="name" class="form-ctrl" placeholder="e.g. John Doe" required/>
+              </div>
+              <div>
+                <label class="form-label-sm">Gender</label>
+                <select name="sex" class="form-ctrl" required>
+                  <option value="1">Male</option>
+                  <option value="0">Female</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vitals & Measurements -->
+        <div class="intake-card">
+          <div class="intake-card-header">
+            <span>🩺</span>
+            <span class="intake-card-title">Vitals &amp; Clinical Measurements</span>
+          </div>
+          <div class="intake-card-body">
+
+            <div class="form-section">Demographics &amp; Vitals</div>
+            <div class="form-grid-3">
+              <!-- Age -->
+              <div>
+                <label class="form-label-sm">Age <span class="unit">years</span> <span id="age-badge" class="normal-tag">Normal</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="age-slider" min="1" max="100" value="55" oninput="sync('age', this.value)">
+                  <span class="slider-num" id="age-disp">55</span>
+                </div>
+                <input type="hidden" name="age" id="age" value="55"/>
+                <div class="range-hint">Clinical range: 1 – 100 yrs</div>
+              </div>
+
+              <!-- Resting BP -->
+              <div>
+                <label class="form-label-sm">Resting BP <span class="unit">mmHg</span> <span id="bp-badge" class="normal-tag">Normal</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="bp-slider" min="80" max="200" value="120" oninput="sync('trestbps', this.value); checkBP(this.value)">
+                  <span class="slider-num" id="trestbps-disp">120</span>
+                </div>
+                <input type="hidden" name="trestbps" id="trestbps" value="120"/>
+                <div class="range-hint">Normal: 90–120 mmHg</div>
+              </div>
+
+              <!-- Cholesterol -->
+              <div>
+                <label class="form-label-sm">Serum Cholesterol <span class="unit">mg/dL</span> <span id="chol-badge" class="normal-tag">Normal</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="chol-slider" min="100" max="600" value="200" oninput="sync('chol', this.value); checkChol(this.value)">
+                  <span class="slider-num" id="chol-disp">200</span>
+                </div>
+                <input type="hidden" name="chol" id="chol" value="200"/>
+                <div class="range-hint">Normal: &lt;200 mg/dL, High: &gt;240</div>
+              </div>
+
+              <!-- Max Heart Rate -->
+              <div>
+                <label class="form-label-sm">Max Heart Rate <span class="unit">bpm</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="hr-slider" min="60" max="220" value="150" oninput="sync('thalach', this.value)">
+                  <span class="slider-num" id="thalach-disp">150</span>
+                </div>
+                <input type="hidden" name="thalach" id="thalach" value="150"/>
+                <div class="range-hint">Achieved during stress test: 60–220 bpm</div>
+              </div>
+
+              <!-- ST Depression (Oldpeak) -->
+              <div>
+                <label class="form-label-sm">ST Depression <span class="unit">Oldpeak (mm)</span> <span id="op-badge" class="normal-tag">Normal</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="op-slider" min="0" max="6.2" step="0.1" value="0" oninput="sync('oldpeak', this.value); checkOldpeak(this.value)">
+                  <span class="slider-num" id="oldpeak-disp">0.0</span>
+                </div>
+                <input type="hidden" name="oldpeak" id="oldpeak" value="0"/>
+                <div class="range-hint">ST depression vs rest: 0–6.2 mm</div>
+              </div>
+
+              <!-- Major Vessels (CA) -->
+              <div>
+                <label class="form-label-sm">Major Vessels (CA) <span class="unit">fluoroscopy</span></label>
+                <div class="slider-wrap">
+                  <input type="range" class="form-range" id="ca-slider" min="0" max="3" step="1" value="0" oninput="sync('ca', this.value)">
+                  <span class="slider-num" id="ca-disp">0</span>
+                </div>
+                <input type="hidden" name="ca" id="ca" value="0"/>
+                <div class="range-hint">Number of coloured vessels: 0–3</div>
+              </div>
+            </div>
+
+            <div class="form-section" style="margin-top: 1.25rem;">Cardiac &amp; Clinical Findings</div>
+            <div class="form-grid-3">
+              <!-- Chest Pain Type -->
+              <div>
+                <label class="form-label-sm">Chest Pain Type</label>
+                <select name="cp" class="form-ctrl" required>
+                  <option value="0">Typical Angina — Classic cardiac chest pain</option>
+                  <option value="1">Atypical Angina — Atypical presentation</option>
+                  <option value="2">Non-Anginal — Not cardiac in origin</option>
+                  <option value="3">Asymptomatic — No chest pain</option>
+                </select>
+              </div>
+
+              <!-- Fasting Blood Sugar -->
+              <div>
+                <label class="form-label-sm">Fasting Blood Sugar &gt; 120 mg/dL</label>
+                <select name="fbs" class="form-ctrl" required>
+                  <option value="0">No — FBS ≤ 120 mg/dL (Normal)</option>
+                  <option value="1">Yes — FBS &gt; 120 mg/dL (Elevated)</option>
+                </select>
+              </div>
+
+              <!-- Resting ECG -->
+              <div>
+                <label class="form-label-sm">Resting ECG Result</label>
+                <select name="restecg" class="form-ctrl" required>
+                  <option value="0">Normal</option>
+                  <option value="1">ST-T Wave Abnormality</option>
+                  <option value="2">LV Hypertrophy (Estes' criteria)</option>
+                </select>
+              </div>
+
+              <!-- Exercise Angina -->
+              <div>
+                <label class="form-label-sm">Exercise-Induced Angina</label>
+                <select name="exang" class="form-ctrl" required>
+                  <option value="0">No — No angina during exercise</option>
+                  <option value="1">Yes — Angina triggered by exertion</option>
+                </select>
+              </div>
+
+              <!-- ST Slope -->
+              <div>
+                <label class="form-label-sm">ST Slope (Peak Exercise)</label>
+                <select name="slope" class="form-ctrl" required>
+                  <option value="0">Upsloping — Least concerning</option>
+                  <option value="1">Flat — Intermediate concern</option>
+                  <option value="2">Downsloping — Most concerning</option>
+                </select>
+              </div>
+
+              <!-- Thalassemia -->
+              <div>
+                <label class="form-label-sm">Thalassemia (Thallium Scan)</label>
+                <select name="thal" class="form-ctrl" required>
+                  <option value="1">Normal blood flow</option>
+                  <option value="2" selected>Fixed Defect — Scar tissue present</option>
+                  <option value="3">Reversible Defect — Ischemia present</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="d-flex gap-3 align-items-center mt-1">
+          <button type="submit" class="submit-btn" id="submit-btn">
+            <span>🧠</span> Register Patient &amp; Run AI Prediction
+          </button>
+          <a href="/cdss/patients" class="cancel-btn">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    const el = document.getElementById('clock');
+    if (el) el.textContent =
+      now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + '  ' +
+      now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
+  }
+  updateClock(); setInterval(updateClock, 30000);
+
+  // Sync slider → hidden input + display
+  function sync(fieldId, value) {
+    document.getElementById(fieldId).value = value;
+    document.getElementById(fieldId + '-disp').textContent = parseFloat(value).toFixed(fieldId === 'oldpeak' ? 1 : 0);
+  }
+
+  // Clinical alert badges
+  function checkBP(v) {
+    const b = document.getElementById('bp-badge');
+    v = parseFloat(v);
+    b.textContent = v > 140 ? 'High BP' : v < 90 ? 'Low BP' : 'Normal';
+    b.className = v > 140 || v < 90 ? 'alert-tag' : 'normal-tag';
+  }
+  function checkChol(v) {
+    const b = document.getElementById('chol-badge');
+    v = parseFloat(v);
+    b.textContent = v > 240 ? 'High' : v > 200 ? 'Borderline' : 'Normal';
+    b.className = v > 240 ? 'alert-tag' : 'normal-tag';
+  }
+  function checkOldpeak(v) {
+    const b = document.getElementById('op-badge');
+    v = parseFloat(v);
+    b.textContent = v > 2 ? 'Concerning' : 'Normal';
+    b.className = v > 2 ? 'alert-tag' : 'normal-tag';
+  }
+
+  // Submit guard
+  document.getElementById('intake-form').addEventListener('submit', function(e) {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Processing…';
+  });
+</script>
+</body>
+</html>

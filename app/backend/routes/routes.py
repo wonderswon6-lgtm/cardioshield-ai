@@ -30,6 +30,32 @@ def result_page():
     return render_template("result.html")
 
 
+@main_bp.route("/insurance-dashboard")
+def insurance_dashboard_page():
+    from app.backend.services.insurance_service import (
+        get_insurance_kpis, get_insurance_applicants, get_risk_distribution
+    )
+    kpis        = get_insurance_kpis()
+    applicants  = get_insurance_applicants(limit=50)
+    dist        = get_risk_distribution()
+    return render_template(
+        "insurance_dashboard.html",
+        kpis=kpis,
+        applicants=applicants,
+        dist=dist,
+    )
+
+
+@main_bp.route("/api/insurance/patient/<int:patient_id>/risk-factors")
+def api_insurance_risk_factors(patient_id):
+    from app.backend.services.insurance_service import get_insurance_risk_factors
+    try:
+        factors = get_insurance_risk_factors(patient_id)
+        return jsonify({"status": "ok", "factors": factors}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 # ════════════════════════════════════════════════════════════
 # API — PREDICTION
 # ════════════════════════════════════════════════════════════
@@ -62,9 +88,11 @@ def api_predict():
         return jsonify({"error": f"Database error: {str(db_err)}"}), 500
 
     # Predict with all models and persist predictions
+    from app.backend.services.explanation_service import explain_prediction
     for m_name in models:
         try:
             res = predict(patient_data, m_name)
+            res["feature_contributions"] = explain_prediction(patient_data, m_name)
             if patient_id:
                 pred_rec = save_prediction(patient_id, res)
                 res["prediction_id"] = pred_rec.id
@@ -148,8 +176,15 @@ def api_patients():
 def api_patient_predictions(patient_id):
     try:
         from app.backend.database.models import Prediction
+        from app.backend.services.explanation_service import explain_prediction
         preds = Prediction.query.filter_by(patient_id=patient_id).order_by(Prediction.predicted_at.desc()).all()
-        return jsonify({"status": "ok", "predictions": [p.to_dict() for p in preds]}), 200
+        predictions_data = []
+        for p in preds:
+            p_dict = p.to_dict()
+            p_data = {col: getattr(p.patient, col) for col in FEATURE_COLS}
+            p_dict["feature_contributions"] = explain_prediction(p_data, p.model_used)
+            predictions_data.append(p_dict)
+        return jsonify({"status": "ok", "predictions": predictions_data}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -247,5 +282,37 @@ def bulk_delete_predictions():
             
         db.session.commit()
         return jsonify({"status": "success", "message": f"Deleted {len(ids)} predictions."}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route("/api/evaluation/metrics")
+def api_evaluation_metrics():
+    try:
+        from app.backend.services.evaluation_service import get_model_metrics
+        metrics = get_model_metrics()
+        return jsonify({"status": "ok", "metrics": metrics}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route("/api/patient/<int:patient_id>/outcome", methods=["PUT"])
+def update_patient_outcome(patient_id):
+    try:
+        from app.backend.database.models import db, Patient
+        data = request.get_json(force=True, silent=True) or {}
+        outcome = data.get("actual_outcome")
+        
+        if outcome not in [0, 1]:
+            return jsonify({"status": "error", "message": "Invalid outcome value. Must be 0 or 1."}), 400
+            
+        patient = Patient.query.get(patient_id)
+        if not patient:
+            return jsonify({"status": "error", "message": "Patient not found"}), 404
+            
+        patient.actual_outcome = outcome
+        db.session.commit()
+        
+        return jsonify({"status": "success", "message": f"Patient {patient_id} actual outcome updated."}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

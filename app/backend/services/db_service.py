@@ -75,6 +75,7 @@ def recent_predictions(limit=50):
             d["prediction"] = avg_pred
             d["risk_level"] = risk
             d["patient_name"] = p_preds[0].patient.name if p_preds[0].patient else ""
+            d["actual_outcome"] = p_preds[0].patient.actual_outcome if p_preds[0].patient else None
             d["patient_data"] = p_preds[0].patient.to_dict() if p_preds[0].patient else {}
             
             grouped.append(d)

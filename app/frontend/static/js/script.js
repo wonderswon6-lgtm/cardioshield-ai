@@ -7,6 +7,77 @@ function hideSpinner()  { document.querySelector('.spinner-overlay')?.classList.
 function fmtPct(v)      { return parseFloat(v).toFixed(1) + '%'; }
 function fmtDate(iso)   { return iso ? new Date(iso).toLocaleString() : '—'; }
 
+// ── Local Explanations rendering helper ────────────────────────────────────
+function setupExplanationSelector(predictions, selectEl, riskListEl, protectiveListEl, sectionEl) {
+  if (!selectEl || !riskListEl || !protectiveListEl || !sectionEl || !predictions || !predictions.length) return;
+
+  const validPreds = predictions.filter(p => p.feature_contributions && p.feature_contributions.length > 0);
+  if (!validPreds.length) {
+    sectionEl.style.display = 'none';
+    return;
+  }
+
+  sectionEl.style.display = 'block';
+  
+  // Populate model dropdown
+  selectEl.innerHTML = validPreds.map(p => {
+    const name = (p.model_used || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return `<option value="${p.model_used}">${name}</option>`;
+  }).join('');
+
+  // Default selection: random_forest, or best model, or first valid
+  const defaultModel = validPreds.some(p => p.model_used === 'random_forest') ? 'random_forest' : validPreds[0].model_used;
+  selectEl.value = defaultModel;
+
+  const renderSelected = () => {
+    const selectedVal = newSelectEl.value;
+    const pred = validPreds.find(p => p.model_used === selectedVal);
+    if (pred) {
+      renderExplanations(pred.feature_contributions, riskListEl, protectiveListEl);
+    }
+  };
+
+  // Re-bind listener without duplicating
+  const newSelectEl = selectEl.cloneNode(true);
+  selectEl.parentNode.replaceChild(newSelectEl, selectEl);
+  newSelectEl.addEventListener('change', renderSelected);
+  renderSelected();
+}
+
+function renderExplanations(contributions, riskListEl, protectiveListEl) {
+  const riskFactors = contributions.filter(c => c.contribution > 0);
+  const protectiveFactors = contributions.filter(c => c.contribution < 0);
+
+  const maxVal = Math.max(...contributions.map(c => Math.abs(c.contribution)), 1);
+
+  const buildHtml = (factors, isRisk) => {
+    if (!factors.length) {
+      return `<div class="text-muted small py-2 text-center">No significant ${isRisk ? 'risk-increasing' : 'protective'} factors.</div>`;
+    }
+    return factors.map(c => {
+      const pctWidth = Math.max(5, (Math.abs(c.contribution) / maxVal * 100)).toFixed(0);
+      const sign = c.contribution > 0 ? '+' : '';
+      const impactClass = isRisk ? 'text-risk' : 'text-protective';
+      const barClass = isRisk ? 'bg-risk' : 'bg-protective';
+      return `
+        <div class="explanation-item">
+          <div class="explanation-meta">
+            <span class="explanation-name">${c.label}</span>
+            <span class="explanation-values">${c.value} <span class="text-muted" style="font-size:0.7rem;">(avg: ${c.baseline})</span></span>
+            <span class="explanation-impact ${impactClass}">${sign}${c.contribution.toFixed(1)}%</span>
+          </div>
+          <div class="explanation-bar-bg">
+            <div class="explanation-bar ${barClass}" style="width: ${pctWidth}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  riskListEl.innerHTML = buildHtml(riskFactors, true);
+  protectiveListEl.innerHTML = buildHtml(protectiveFactors, false);
+}
+
 // ── Navbar active link ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const path = window.location.pathname;
@@ -154,6 +225,15 @@ function initResultPage() {
         <td class="text-muted small" style="line-height: 1.4; max-width: 350px;">${p.recommendation}</td>
       </tr>`;
     }).join('');
+
+    // Setup Local Feature Explanations
+    setupExplanationSelector(
+      data.predictions,
+      $('explain-model-select'),
+      $('risk-factors-list'),
+      $('protective-factors-list'),
+      $('explanation-section')
+    );
   }
 }
 
@@ -250,6 +330,13 @@ async function loadRecentPredictions() {
       const riskCls = p.risk_level?.toLowerCase() || 'low';
       const predLbl = p.prediction === 1 ? 'Disease' : 'Healthy';
       const predCls = p.prediction === 1 ? 'disease' : 'healthy';
+      const outcomeVal = p.actual_outcome;
+      let outcomeSelect = `<select class="form-select form-select-sm" style="width:100px; font-size:0.75rem; background-color: var(--bg-card); color: var(--text-100); border: 1px solid var(--border);" onchange="updateOutcome(${p.patient_id}, this.value)">
+          <option value="" ${outcomeVal === null ? 'selected' : ''}>Unknown</option>
+          <option value="0" ${outcomeVal === 0 ? 'selected' : ''}>Healthy</option>
+          <option value="1" ${outcomeVal === 1 ? 'selected' : ''}>Disease</option>
+        </select>`;
+
       return `<tr>
         <td><input type="checkbox" class="pred-checkbox" value="${p.id}" onclick="updateBulkDeleteBtn()"></td>
         <td>${p.id}</td>
@@ -258,6 +345,7 @@ async function loadRecentPredictions() {
         <td><span class="badge badge-${predCls}">${predLbl}</span></td>
         <td>${fmtPct(p.probability)}</td>
         <td><span class="badge badge-${riskCls}">${p.risk_level}</span></td>
+        <td>${outcomeSelect}</td>
         <td>${fmtDate(p.predicted_at)}</td>
         <td>
           <button class="btn btn-sm btn-outline me-1 py-0 px-2" style="font-size:0.75rem;" onclick="viewReport(${idx})">👁️ View</button>
@@ -598,6 +686,15 @@ async function viewReport(idx) {
             <td style="white-space: normal; max-width: 400px; font-size: 0.8rem; line-height: 1.4;">${rec}</td>
           </tr>`;
         }).join('');
+
+        // Setup Local Feature Explanations in modal
+        setupExplanationSelector(
+          json.predictions,
+          $('modal-explain-model-select'),
+          $('modal-risk-factors-list'),
+          $('modal-protective-factors-list'),
+          $('modal-explanation-section')
+        );
       } else {
         tbody.innerHTML = '<tr><td colspan="5" class="text-muted text-center py-2">Failed to load</td></tr>';
       }
@@ -745,4 +842,91 @@ function renderGroupedBar(canvasId, labels, datasets) {
       }
     }
   });
+}
+
+// ── Models Comparison Modal ───────────────────────────────────────────────
+let modelsModalInstance = null;
+
+function openModelsComparisonModal() {
+  if (!modelsModalInstance) {
+    modelsModalInstance = new bootstrap.Modal($('modelsModal'));
+  }
+  modelsModalInstance.show();
+  loadModelsMetrics();
+}
+
+async function loadModelsMetrics() {
+  const tbody = $('models-metrics-tbody');
+  const notice = $('models-best-notice');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Loading metrics...</td></tr>';
+  if (notice) notice.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/evaluation/metrics');
+    const json = await res.json();
+    
+    if (res.ok && json.status === 'ok') {
+      const metrics = json.metrics;
+      if (Object.keys(metrics).length === 0) {
+         if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No patients have actual outcomes recorded. Set actual outcomes in the Recent Predictions table.</td></tr>';
+         return;
+      }
+
+      let bestModel = null;
+      let maxAcc = -1;
+
+      tbody.innerHTML = Object.entries(metrics).map(([model, m]) => {
+        const name = model.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const acc = (m.accuracy * 100).toFixed(1) + '%';
+        const prec = (m.precision * 100).toFixed(1) + '%';
+        const rec = (m.recall * 100).toFixed(1) + '%';
+        const f1 = (m.f1_score * 100).toFixed(1) + '%';
+        const auc = m.roc_auc ? (m.roc_auc * 100).toFixed(1) + '%' : 'N/A';
+        
+        if (m.accuracy > maxAcc) {
+            maxAcc = m.accuracy;
+            bestModel = name;
+        }
+
+        return `<tr>
+          <td><strong>${name}</strong></td>
+          <td>${acc}</td>
+          <td>${prec}</td>
+          <td>${rec}</td>
+          <td>${f1}</td>
+          <td>${auc}</td>
+          <td>${m.samples}</td>
+        </tr>`;
+      }).join('');
+      
+      if (notice && bestModel) {
+          notice.innerHTML = `<strong>Best Performing Model:</strong> ${bestModel} with ${ (maxAcc * 100).toFixed(1) }% accuracy.`;
+          notice.style.display = 'block';
+      }
+
+    } else {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${json.message}</td></tr>`;
+    }
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error loading metrics: ${err.message}</td></tr>`;
+  }
+}
+
+async function updateOutcome(patient_id, outcomeValue) {
+    let actual_outcome = outcomeValue === "" ? null : Number(outcomeValue);
+    try {
+        const res = await fetch(`/api/patient/${patient_id}/outcome`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actual_outcome })
+        });
+        const json = await res.json();
+        if (!res.ok || json.status !== 'success') {
+            alert('Failed to update actual outcome: ' + (json.message || 'Unknown error'));
+            loadRecentPredictions(); // reload to revert select
+        }
+    } catch (err) {
+        alert('Error updating outcome: ' + err.message);
+        loadRecentPredictions();
+    }
 }

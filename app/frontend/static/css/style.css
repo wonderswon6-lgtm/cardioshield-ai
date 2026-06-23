@@ -686,3 +686,141 @@ input:disabled, select:disabled, textarea:disabled {
   }
 }
 
+/* ── Local Feature Explanations (LIME/SHAP style) ────────── */
+.explanation-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  animation: fadeInUp 0.5s ease both;
+}
+.explanation-selector-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.explanation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.explanation-card {
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.explanation-card.risk-card {
+  border-left: 4px solid var(--danger);
+}
+.explanation-card.protective-card {
+  border-left: 4px solid var(--success);
+}
+.explanation-card h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.text-risk { color: var(--danger); }
+.text-protective { color: var(--success); }
+
+.explanation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.explanation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.explanation-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+}
+.explanation-name {
+  font-weight: 600;
+  color: var(--text-100);
+}
+.explanation-values {
+  font-size: 0.75rem;
+  color: var(--text-400);
+}
+.explanation-impact {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.explanation-bar-bg {
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+.explanation-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.explanation-bar.bg-risk {
+  background: var(--danger);
+  box-shadow: 0 0 8px rgba(239,68,68,0.5);
+}
+.explanation-bar.bg-protective {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(16,185,129,0.5);
+}
+
+@media (max-width: 768px) {
+  .explanation-grid { grid-template-columns: 1fr; }
+}
+
+/* Print optimizations for explanations */
+@media print {
+  .explanation-section {
+    page-break-inside: avoid;
+    margin-top: 1.5rem !important;
+    padding-top: 1rem !important;
+    border-top: 2px solid #000 !important;
+  }
+  .explanation-card {
+    background: transparent !important;
+    border: 1px solid #ccc !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+  .explanation-card.risk-card {
+    border-left: 4px solid #ef4444 !important;
+  }
+  .explanation-card.protective-card {
+    border-left: 4px solid #10b981 !important;
+  }
+  .explanation-name {
+    color: #000 !important;
+  }
+  .explanation-values {
+    color: #555 !important;
+  }
+  .explanation-bar-bg {
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  .explanation-bar.bg-risk {
+    background: #ef4444 !important;
+  }
+  .explanation-bar.bg-protective {
+    background: #10b981 !important;
+  }
+  .explanation-selector-wrap {
+    display: none !important;
+  }
+}
+
+

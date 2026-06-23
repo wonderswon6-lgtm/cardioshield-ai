@@ -77,3 +77,28 @@ def test_prediction_service():
     assert result["prediction"] in (0, 1)
     assert 0 <= result["probability"] <= 100
     assert result["risk_level"] in ("Low", "Moderate", "High")
+
+
+def test_explanation_service():
+    from app.backend.services.prediction_service import models_trained
+    if not models_trained():
+        pytest.skip("Models not trained yet")
+    from app.backend.services.explanation_service import explain_prediction
+    patient = dict(age=63,sex=1,cp=3,trestbps=145,chol=233,fbs=1,
+                   restecg=0,thalach=150,exang=0,oldpeak=2.3,slope=0,ca=0,thal=1)
+    
+    expl = explain_prediction(patient, "random_forest")
+    assert isinstance(expl, list)
+    assert len(expl) == 13
+    
+    first = expl[0]
+    assert "feature" in first
+    assert "label" in first
+    assert "value" in first
+    assert "baseline" in first
+    assert "contribution" in first
+    assert isinstance(first["contribution"], float)
+    
+    for i in range(len(expl) - 1):
+        assert abs(expl[i]["contribution"]) >= abs(expl[i+1]["contribution"])
+

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Consultation — {{ patient.name or 'Patient' }} — CardioShield CDSS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue:#1d4ed8; --blue-lt:#3b82f6; --blue-pale:#eff6ff;
+      --green:#16a34a; --green-pale:#f0fdf4;
+      --yellow:#ca8a04; --yellow-pale:#fefce8;
+      --red:#dc2626; --red-pale:#fef2f2;
+      --gray:#64748b; --gray-lt:#f8fafc; --border:#e2e8f0; --text:#1e293b;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: var(--text); }
+
+    /* Layout */
+    .cdss-layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 220px; background: #0f172a; color: #cbd5e1;
+      display: flex; flex-direction: column; flex-shrink: 0;
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 50;
+    }
+    .sidebar-brand { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 0.6rem; }
+    .sidebar-brand .icon { font-size: 1.4rem; }
+    .sidebar-brand .name { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
+    .sidebar-brand .sub  { font-size: 0.68rem; color: #94a3b8; }
+    .sidebar-doctor { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-doctor .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 0.3rem; }
+    .sidebar-doctor .dname { font-size: 0.85rem; font-weight: 600; color: #f1f5f9; }
+    .sidebar-doctor .spec  { font-size: 0.72rem; color: #3b82f6; }
+    .sidebar-nav { flex: 1; padding: 1rem 0; }
+    .nav-item-link { display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1.25rem; color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.15s; }
+    .nav-item-link:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
+    .nav-item-link.active { background: rgba(29,78,216,0.2); color: #60a5fa; border-right: 3px solid #3b82f6; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(239,68,68,0.1); color: #f87171; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 600; transition: background 0.2s; }
+    .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+    .main-content { margin-left: 220px; flex: 1; }
+
+    /* Top bar */
+    .topbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0.85rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+    .topbar-left .breadcrumb { font-size: 0.75rem; color: var(--gray); margin: 0; }
+    .topbar-left .breadcrumb a { color: var(--blue); text-decoration: none; }
+    .patient-topbar { display: flex; align-items: center; gap: 1rem; }
+    .patient-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue-pale); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; }
+    .patient-topbar-name { font-size: 0.95rem; font-weight: 700; }
+    .patient-topbar-meta { font-size: 0.75rem; color: var(--gray); }
+    .status-open { background: #dcfce7; color: #16a34a; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+
+    /* Content */
+    .consult-body { padding: 1.5rem; display: grid; grid-template-columns: 340px 1fr; gap: 1.25rem; }
+
+    /* Cards */
+    .cdss-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); overflow: hidden; }
+    .cdss-card-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--gray-lt); }
+    .cdss-card-title { font-size: 0.8rem; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+    .cdss-card-body { padding: 1rem; }
+
+    /* Patient Summary */
+    .patient-stat { display: flex; align-items: baseline; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+    .patient-stat:last-child { border-bottom: none; }
+    .patient-stat-label { font-size: 0.75rem; color: var(--gray); font-weight: 500; }
+    .patient-stat-value { font-size: 0.85rem; font-weight: 700; color: var(--text); }
+    .risk-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; }
+    .risk-badge.Low    { background: var(--green-pale); color: var(--green); }
+    .risk-badge.Moderate, .risk-badge.Medium { background: var(--yellow-pale); color: var(--yellow); }
+    .risk-badge.High   { background: var(--red-pale); color: var(--red); }
+
+    /* History table */
+    .hist-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    .hist-table th { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray); padding: 0.4rem 0.6rem; border-bottom: 2px solid var(--border); }
+    .hist-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text); }
+    .hist-table tr:last-child td { border-bottom: none; }
+    .model-tag { font-size: 0.68rem; background: var(--blue-pale); color: var(--blue); padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+
+    /* Form */
+    .form-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); margin: 0.75rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--blue-pale); }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+    .form-group { margin-bottom: 0; }
+    .form-label-sm { font-size: 0.72rem; font-weight: 600; color: var(--gray); display: flex; justify-content: space-between; margin-bottom: 0.25rem; }
+    .form-ctrl {
+      border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 0.4rem 0.6rem; font-size: 0.82rem; width: 100%;
+      background: var(--gray-lt); color: var(--text); outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-ctrl:focus { border-color: var(--blue); background: #fff; }
+    .slider-wrap { display: flex; align-items: center; gap: 0.4rem; }
+    .form-range { flex: 1; accent-color: var(--blue); }
+    .slider-val { font-size: 0.78rem; font-weight: 700; color: var(--blue); min-width: 38px; text-align: right; }
+    .run-btn {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: #fff; border: none; border-radius: 8px;
+      padding: 0.7rem 1.5rem; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; width: 100%; transition: opacity 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+    .run-btn:hover { opacity: 0.9; }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Result panel */
+    .result-panel { display: none; }
+    .result-panel.show { display: block; }
+
+    /* Risk meter */
+    .risk-meter-wrap { position: relative; height: 10px; background: linear-gradient(to right, #22c55e 0%, #22c55e 35%, #eab308 35%, #eab308 65%, #ef4444 65%); border-radius: 5px; margin: 0.5rem 0; }
+    .risk-needle { position: absolute; top: -4px; width: 18px; height: 18px; background: #1e293b; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transform: translateX(-50%); transition: left 0.8s ease; }
+
+    /* Per-model table */
+    .model-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
+    .model-row:last-child { border-bottom: none; }
+    .model-row .mname { font-size: 0.78rem; font-weight: 600; flex: 1; }
+    .prob-bar-outer { flex: 2; height: 7px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+    .prob-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .prob-bar-fill.low { background: #22c55e; }
+    .prob-bar-fill.moderate { background: #eab308; }
+    .prob-bar-fill.high { background: #ef4444; }
+    .prob-pct { font-size: 0.78rem; font-weight: 700; min-width: 38px; text-align: right; }
+
+    /* Factor bars */
+    .factor-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; }
+    .factor-label { font-size: 0.78rem; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .factor-bar-outer { flex: 2; height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+    .factor-bar-fill { height: 100%; border-radius: 3px; }
+    .factor-bar-fill.risk  { background: #ef4444; }
+    .factor-bar-fill.protective { background: #3b82f6; }
+    .factor-pct { font-size: 0.72rem; font-weight: 700; min-width: 45px; text-align: right; }
+    .factor-pct.risk { color: #dc2626; }
+    .factor-pct.protective { color: #1d4ed8; }
+
+    /* Recommendations */
+    .rec-item { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+    .rec-item:last-child { border-bottom: none; }
+    .rec-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.4; }
+    .rec-text { font-size: 0.82rem; color: var(--text); line-height: 1.4; }
+    .priority-urgent .rec-text { color: var(--red); font-weight: 600; }
+    .priority-moderate .rec-text { color: var(--yellow); }
+    .priority-info .rec-text { color: #1e3a5f; }
+
+    /* Notes */
+    .notes-area { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 0.65rem 0.9rem; font-size: 0.85rem; font-family: 'Inter', sans-serif; color: var(--text); resize: vertical; outline: none; min-height: 90px; background: var(--gray-lt); transition: border-color 0.2s; }
+    .notes-area:focus { border-color: var(--blue); background: #fff; }
+    .save-btn { background: var(--green); color: #fff; border: none; border-radius: 8px; padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem; }
+    .save-btn:hover { background: #15803d; }
+    .save-success { display: none; background: var(--green-pale); color: var(--green); border: 1px solid #86efac; border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; margin-top: 0.5rem; }
+
+    /* Spinner */
+    .spinner { display: none; width: 22px; height: 22px; border: 3px solid #e2e8f0; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="cdss-layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <span class="icon">🫀</span>
+      <div><div class="name">CardioShield</div><div class="sub">CDSS</div></div>
+    </div>
+    <div class="sidebar-doctor">
+      <div class="label">Attending Physician</div>
+      <div class="dname">{{ session.doctor_name }}</div>
+      <div class="spec">{{ session.doctor_spec }}</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/cdss/patients" class="nav-item-link active">🔍 &nbsp;Patient Search</a>
+      <a href="/cdss/new_patient" class="nav-item-link">➕ &nbsp;New Patient</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="/cdss/logout" class="logout-btn">🚪 &nbsp;Logout</a>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-content">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <nav aria-label="breadcrumb" class="breadcrumb">
+          <a href="/cdss/patients">Patient Search</a> › Consultation
+        </nav>
+        <div class="patient-topbar mt-1">
+          <div class="patient-avatar">{{ (patient.name or 'P')[0].upper() }}</div>
+          <div>
+            <div class="patient-topbar-name">{{ patient.name or 'Unnamed Patient' }}</div>
+            <div class="patient-topbar-meta">PID-{{ '%04d' % patient.id }} &nbsp;·&nbsp; {{ patient.age }} yrs &nbsp;·&nbsp; {{ 'Male' if patient.sex == 1 else 'Female' }}</div>
+          </div>
+          <span class="status-open ms-2">● ACTIVE CONSULTATION</span>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span id="clock" style="font-size:0.78rem; color: var(--gray);"></span>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary" style="font-size:0.78rem;">🖨️ Print</button>
+      </div>
+    </div>
+
+    <!-- Consultation Body -->
+    <div class="consult-body">
+
+      <!-- LEFT COLUMN -->
+      <div class="d-flex flex-column gap-3">
+
+        <!-- A: Patient Summary -->
+        <div class="cdss-card">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">🪪 Section A — Patient Summary</span>
+          </div>
+          <div class="cdss-card-body">
+            <div class="patient-stat"><span class="patient-stat-label">Patient ID</span><span class="patient-stat-value">PID-{{ '%04d' % patient.id }}</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Full Name</span><span class="patient-stat-value">{{ patient.name or '—' }}</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Age</span><span class="patient-stat-value">{{ patient.age }} years</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Gender</span><span class="patient-stat-value">{{ 'Male' if patient.sex == 1 else 'Female' }}</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Cholesterol</span><span class="patient-stat-value">{{ patient.chol | int }} mg/dL</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Resting BP</span><span class="patient-stat-value">{{ patient.trestbps | int }} mmHg</span></div>
+            <div class="patient-stat"><span class="patient-stat-label">Fasting BS</span><span class="patient-stat-value">{{ '> 120 mg/dL' if patient.fbs == 1 else '≤ 120 mg/dL' }}</span></div>
+            {% if avg_risk %}
+            <div class="patient-stat"><span class="patient-stat-label">Prior Risk</span>
+              <span class="risk-badge {{ risk_level }}">{{ risk_level }} ({{ avg_risk }}%)</span>
+            </div>
+            {% endif %}
+            <div class="patient-stat"><span class="patient-stat-label">Total Assessments</span><span class="patient-stat-value">{{ predictions | length }}</span></div>
+          </div>
+        </div>
+
+        <!-- Prior Predictions -->
+        {% if predictions %}
+        <div class="cdss-card">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">📋 Assessment History</span>
+          </div>
+          <div class="cdss-card-body p-0" style="overflow-x: auto;">
+            <table class="hist-table">
+              <thead><tr><th>Model</th><th>Result</th><th>Prob.</th><th>Risk</th><th>Date</th></tr></thead>
+              <tbody>
+                {% for pred in predictions[:8] %}
+                <tr>
+                  <td><span class="model-tag">{{ pred.model_used | replace('_',' ') | title }}</span></td>
+                  <td style="font-weight:700; color: {{ '#dc2626' if pred.prediction == 1 else '#16a34a' }};">{{ 'Disease' if pred.prediction == 1 else 'Healthy' }}</td>
+                  <td>{{ pred.probability | round(1) }}%</td>
+                  <td><span class="risk-badge {{ pred.risk_level }}">{{ pred.risk_level }}</span></td>
+                  <td style="font-size:0.7rem; color: var(--gray);">{{ pred.predicted_at.strftime('%d %b %Y') if pred.predicted_at else '—' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="d-flex flex-column gap-3">
+
+        <!-- B: Clinical Input Form -->
+        <div class="cdss-card">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">🩺 Section B — Clinical Input</span>
+            <span style="font-size:0.7rem; color: var(--gray);">Pre-filled from patient record</span>
+          </div>
+          <div class="cdss-card-body">
+            <form id="consult-form">
+              <div class="form-section-title">Demographic</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label-sm">Age (yrs) <span id="age-v">{{ patient.age }}</span></label>
+                  <div class="slider-wrap">
+                    <input type="range" class="form-range" id="age" name="age" min="1" max="120" value="{{ patient.age }}"
+                           oninput="sv('age',this.value)">
+                    <span class="slider-val" id="age-d">{{ patient.age }}</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Sex</label>
+                  <select name="sex" class="form-ctrl">
+                    <option value="1" {{ 'selected' if patient.sex == 1 }}>Male</option>
+                    <option value="0" {{ 'selected' if patient.sex == 0 }}>Female</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-section-title">Cardiac Parameters</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label-sm">Chest Pain Type</label>
+                  <select name="cp" class="form-ctrl">
+                    <option value="0" {{ 'selected' if patient.cp == 0 }}>Typical Angina</option>
+                    <option value="1" {{ 'selected' if patient.cp == 1 }}>Atypical Angina</option>
+                    <option value="2" {{ 'selected' if patient.cp == 2 }}>Non-Anginal</option>
+                    <option value="3" {{ 'selected' if patient.cp == 3 }}>Asymptomatic</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Resting ECG</label>
+                  <select name="restecg" class="form-ctrl">
+                    <option value="0" {{ 'selected' if patient.restecg == 0 }}>Normal</option>
+                    <option value="1" {{ 'selected' if patient.restecg == 1 }}>ST-T Abnormality</option>
+                    <option value="2" {{ 'selected' if patient.restecg == 2 }}>LV Hypertrophy</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Exercise Angina</label>
+                  <select name="exang" class="form-ctrl">
+                    <option value="0" {{ 'selected' if patient.exang == 0 }}>No</option>
+                    <option value="1" {{ 'selected' if patient.exang == 1 }}>Yes</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Fasting BS &gt; 120</label>
+                  <select name="fbs" class="form-ctrl">
+                    <option value="0" {{ 'selected' if patient.fbs == 0 }}>No</option>
+                    <option value="1" {{ 'selected' if patient.fbs == 1 }}>Yes</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">ST Slope</label>
+                  <select name="slope" class="form-ctrl">
+                    <option value="0" {{ 'selected' if patient.slope == 0 }}>Upsloping</option>
+                    <option value="1" {{ 'selected' if patient.slope == 1 }}>Flat</option>
+                    <option value="2" {{ 'selected' if patient.slope == 2 }}>Downsloping</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Major Vessels (CA)</label>
+                  <select name="ca" class="form-ctrl">
+                    {% for i in range(5) %}
+                    <option value="{{ i }}" {{ 'selected' if patient.ca == i }}>{{ i }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Thalassemia</label>
+                  <select name="thal" class="form-ctrl">
+                    <option value="1" {{ 'selected' if patient.thal == 1 }}>Normal</option>
+                    <option value="2" {{ 'selected' if patient.thal == 2 }}>Fixed Defect</option>
+                    <option value="3" {{ 'selected' if patient.thal == 3 }}>Reversible Defect</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-section-title">Vitals (Adjustable)</div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label-sm">Resting BP (mmHg) <span id="trestbps-v"></span></label>
+                  <div class="slider-wrap">
+                    <input type="range" class="form-range" id="trestbps" name="trestbps" min="50" max="250" value="{{ patient.trestbps | int }}" oninput="sv('trestbps',this.value)">
+                    <span class="slider-val" id="trestbps-d">{{ patient.trestbps | int }}</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Cholesterol (mg/dL)</label>
+                  <div class="slider-wrap">
+                    <input type="range" class="form-range" id="chol" name="chol" min="50" max="600" value="{{ patient.chol | int }}" oninput="sv('chol',this.value)">
+                    <span class="slider-val" id="chol-d">{{ patient.chol | int }}</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">Max Heart Rate (bpm)</label>
+                  <div class="slider-wrap">
+                    <input type="range" class="form-range" id="thalach" name="thalach" min="50" max="250" value="{{ patient.thalach | int }}" oninput="sv('thalach',this.value)">
+                    <span class="slider-val" id="thalach-d">{{ patient.thalach | int }}</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label-sm">ST Depression (Oldpeak)</label>
+                  <div class="slider-wrap">
+                    <input type="range" class="form-range" id="oldpeak" name="oldpeak" min="0" max="10" step="0.1" value="{{ patient.oldpeak }}" oninput="sv('oldpeak',this.value)">
+                    <span class="slider-val" id="oldpeak-d">{{ patient.oldpeak }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <button type="button" class="run-btn" id="run-btn" onclick="runPrediction()">
+                  <span id="btn-icon">🧠</span> Run AI Prediction
+                  <div class="spinner" id="spinner"></div>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- C: AI Result -->
+        <div class="cdss-card result-panel" id="result-panel">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">🤖 Section C — AI Prediction Result</span>
+            <span id="result-timestamp" style="font-size:0.7rem; color: var(--gray);"></span>
+          </div>
+          <div class="cdss-card-body">
+            <!-- Risk verdict summary -->
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div id="result-icon" style="font-size: 2.5rem;"></div>
+              <div>
+                <div id="result-label" style="font-size: 1.3rem; font-weight: 800;"></div>
+                <div id="result-sub" style="font-size: 0.82rem; color: var(--gray);"></div>
+              </div>
+              <div class="ms-auto text-end">
+                <div style="font-size: 1.8rem; font-weight: 800;" id="result-prob"></div>
+                <div style="font-size: 0.72rem; color: var(--gray);">Cardiac Risk Score</div>
+              </div>
+            </div>
+            <!-- Risk meter -->
+            <div class="risk-meter-wrap mb-3">
+              <div class="risk-needle" id="risk-needle" style="left: 0%"></div>
+            </div>
+            <div style="display:flex; justify-content: space-between; font-size: 0.65rem; color: var(--gray); margin-bottom: 0.75rem;">
+              <span>Low Risk</span><span>Moderate</span><span>High Risk</span>
+            </div>
+
+            <!-- Consensus verdict badge -->
+            <div id="consensus-banner" style="display:none; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;"></div>
+          </div>
+        </div>
+
+        <!-- D: Risk Factors -->
+        <div class="cdss-card result-panel" id="factors-panel">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">📊 Section D — Risk Factor Analysis</span>
+          </div>
+          <div class="cdss-card-body">
+            <div id="factors-list"></div>
+          </div>
+        </div>
+
+        <!-- E: Recommendations -->
+        <div class="cdss-card result-panel" id="recs-panel">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">💡 Section E — AI Recommendations</span>
+          </div>
+          <div class="cdss-card-body">
+            <div id="recs-list"></div>
+          </div>
+        </div>
+
+        <!-- F: Doctor Notes -->
+        <div class="cdss-card">
+          <div class="cdss-card-header">
+            <span class="cdss-card-title">📝 Section F — Doctor Notes</span>
+          </div>
+          <div class="cdss-card-body">
+            <textarea class="notes-area" id="doctor-notes" placeholder="Enter consultation notes, observations, and clinical findings here…"></textarea>
+            <div class="mt-2 d-flex align-items-center gap-2">
+              <button class="save-btn" onclick="saveReport()">💾 Save Report</button>
+              <div class="save-success" id="save-success">✅ Report saved successfully!</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /right col -->
+    </div><!-- /consult-body -->
+  </div><!-- /main-content -->
+</div><!-- /layout -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const PATIENT_ID      = {{ patient.id }};
+const CONSULTATION_ID = {{ consultation_id }};
+let lastPredictionId  = null;
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'}) + '  ' +
+    now.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12:true});
+}
+updateClock(); setInterval(updateClock, 30000);
+
+// Slider display
+function sv(id, val) {
+  const d = document.getElementById(id + '-d');
+  if (d) d.textContent = val;
+}
+
+// Gather form data
+function getFormData() {
+  const form = document.getElementById('consult-form');
+  const d = {};
+  ['age','sex','cp','trestbps','chol','fbs','restecg','thalach','exang','oldpeak','slope','ca','thal'].forEach(k => {
+    const el = form.elements[k];
+    if (el) d[k] = parseFloat(el.value);
+  });
+  d.patient_id = PATIENT_ID;
+  return d;
+}
+
+// Run Prediction
+async function runPrediction() {
+  const btn     = document.getElementById('run-btn');
+  const spinner = document.getElementById('spinner');
+  const icon    = document.getElementById('btn-icon');
+  btn.disabled  = true;
+  spinner.style.display = 'block';
+  icon.style.display    = 'none';
+
+  try {
+    const res  = await fetch('/cdss/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(getFormData())
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) { alert('Prediction error: ' + (json.error || 'Unknown')); return; }
+    renderResult(json);
+  } catch (e) {
+    alert('Network error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    icon.style.display    = 'inline';
+  }
+}
+
+function renderResult(json) {
+  lastPredictionId = json.last_prediction_id;
+  const prob = json.ensemble_prob;
+  const risk = json.risk_level;
+
+  // Show panels
+  document.querySelectorAll('.result-panel').forEach(p => p.classList.add('show'));
+  document.getElementById('result-timestamp').textContent = new Date().toLocaleTimeString();
+
+  // Section C
+  const isDisease = json.ensemble_pred === 1;
+  document.getElementById('result-icon').textContent = isDisease ? '🔴' : '🟢';
+  document.getElementById('result-label').textContent = isDisease ? 'Heart Disease Risk Detected' : 'Low Cardiac Risk';
+  document.getElementById('result-label').style.color = isDisease ? '#dc2626' : '#16a34a';
+  document.getElementById('result-sub').textContent = `Risk Level: ${risk}`;
+  document.getElementById('result-prob').textContent = prob.toFixed(1) + '%';
+  document.getElementById('result-prob').style.color = isDisease ? '#dc2626' : '#16a34a';
+
+  // Needle
+  document.getElementById('risk-needle').style.left = Math.min(Math.max(prob, 1), 99) + '%';
+
+  // Consensus banner (how many models agree)
+  const diseaseVotes = json.per_model.filter(m => m.pred === 1).length;
+  const total = json.per_model.length;
+  const banner = document.getElementById('consensus-banner');
+  if (banner) {
+    banner.style.display = 'block';
+    let msg, style;
+    if (diseaseVotes === total) {
+      msg = `⚠️ All ${total} AI models agree — high cardiac risk detected.`;
+      style = 'background:#fee2e2; color:#dc2626; border:1px solid #fca5a5;';
+    } else if (diseaseVotes === 0) {
+      msg = `✅ All ${total} AI models agree — low cardiac risk.`;
+      style = 'background:#f0fdf4; color:#16a34a; border:1px solid #86efac;';
+    } else {
+      msg = `⚡ ${diseaseVotes} of ${total} models indicate cardiac risk — review risk factors carefully.`;
+      style = 'background:#fefce8; color:#ca8a04; border:1px solid #fde68a;';
+    }
+    banner.innerHTML = msg;
+    banner.setAttribute('style', 'display:block; padding:0.65rem 1rem; border-radius:8px; font-size:0.85rem; font-weight:600; margin-bottom:0.75rem; ' + style);
+  }
+
+  // Section D: Risk Factors
+  const maxAbs = Math.max(...json.contributions.map(c => Math.abs(c.contribution)), 1);
+  document.getElementById('factors-list').innerHTML = json.contributions.map(c => {
+    const abs  = Math.abs(c.contribution);
+    const pct  = ((abs / maxAbs) * 100).toFixed(0);
+    const type = c.contribution > 0 ? 'risk' : 'protective';
+    const arrow = c.contribution > 0 ? '↑' : '↓';
+    return `<div class="factor-item">
+      <div class="factor-label">${c.label}</div>
+      <div class="factor-bar-outer"><div class="factor-bar-fill ${type}" style="width:${pct}%"></div></div>
+      <div class="factor-pct ${type}">${arrow} ${c.contribution > 0 ? '+' : ''}${c.contribution.toFixed(1)}pp</div>
+    </div>`;
+  }).join('');
+
+  // Section E: Recommendations
+  document.getElementById('recs-list').innerHTML = json.recommendations.map(r =>
+    `<div class="rec-item priority-${r.priority}">
+      <span class="rec-icon">${r.icon}</span>
+      <span class="rec-text">${r.text}</span>
+    </div>`
+  ).join('') || '<div class="rec-item"><span class="rec-text text-muted">No specific recommendations at this time.</span></div>';
+
+  // Scroll to result
+  document.getElementById('result-panel').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Save Report
+async function saveReport() {
+  const notes = document.getElementById('doctor-notes').value;
+  try {
+    const res = await fetch(`/cdss/api/consultation/${CONSULTATION_ID}/save`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({notes, prediction_id: lastPredictionId})
+    });
+    const json = await res.json();
+    if (json.status === 'success') {
+      const el = document.getElementById('save-success');
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3000);
+    } else {
+      alert('Failed to save report.');
+    }
+  } catch (e) {
+    alert('Error saving report: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
